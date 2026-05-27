@@ -414,7 +414,7 @@ class VoltraData
             ? (int) \Illuminate\Support\Facades\Auth::user()->id_perusahaan
             : 1;
 
-        $perusahaan = \App\Models\Perusahaan::all()->toArray();
+        $perusahaan = \App\Models\Perusahaan::where('id_perusahaan', $tid)->get()->toArray();
         $pengguna = \App\Models\Pengguna::where('id_perusahaan', $tid)->get()->toArray();
         $merek = \App\Models\Merek::all()->toArray();
         $pelanggan = \App\Models\Pelanggan::where('id_perusahaan', $tid)->get()->toArray();
