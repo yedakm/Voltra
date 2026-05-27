@@ -1,0 +1,213 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ====== Voltra design system — ported from voltra.html ====== */
+@layer base {
+    [x-cloak] {
+        display: none !important;
+    }
+    html,
+    body {
+        background: #f2f4f7;
+        color: #1c2028;
+    }
+    body {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-feature-settings: 'cv11', 'ss01';
+    }
+}
+
+@layer components {
+    .mono {
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* thin scrollbars */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #c9cfdb;
+        border-radius: 8px;
+        border: 2px solid #f2f4f7;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    /* table row hover */
+    tbody tr.hoverable:hover {
+        background: #f7f8fa;
+    }
+
+    /* subtle striped placeholder */
+    .placeholder-stripes {
+        background-image: repeating-linear-gradient(135deg, #e9edf3 0 10px, #f3f5f9 10px 20px);
+    }
+
+    /* input base */
+    .inp {
+        border: 1px solid #dee2ea;
+        background: #fff;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 13px;
+        width: 100%;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .inp:focus {
+        outline: none;
+        border-color: #177f8a;
+        box-shadow: 0 0 0 3px rgba(23, 127, 138, 0.15);
+    }
+    textarea.inp {
+        line-height: 1.5;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .btn-primary {
+        background: #177f8a;
+        color: #fff;
+    }
+    .btn-primary:hover {
+        background: #0f6670;
+    }
+    .btn-primary:disabled {
+        background: #9ed4d9;
+        cursor: not-allowed;
+    }
+    .btn-ghost {
+        background: transparent;
+        color: #3e4553;
+        border-color: #dee2ea;
+    }
+    .btn-ghost:hover {
+        background: #f7f8fa;
+    }
+    .btn-danger {
+        background: #fff;
+        color: #b42318;
+        border-color: #fecdca;
+    }
+    .btn-danger:hover {
+        background: #fef3f2;
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* sidebar nav link */
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        color: #c2c8d4;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    .nav-link:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+    }
+    .nav-link.active {
+        background: rgba(23, 127, 138, 0.18);
+        color: #fff;
+    }
+    .nav-link.active .nav-ic {
+        color: #6abac1;
+    }
+    .nav-group {
+        padding: 10px 12px 4px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #5b6271;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    /* tabs */
+    .tab {
+        padding: 8px 2px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #5b6271;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+    }
+    .tab:hover {
+        color: #1c2028;
+    }
+    .tab.active {
+        color: #0b4e56;
+        border-bottom-color: #177f8a;
+    }
+
+    /* card */
+    .card {
+        background: #fff;
+        border: 1px solid #e6e9ef;
+        border-radius: 8px;
+        box-shadow: 0 1px 0 rgba(16, 19, 26, 0.02);
+    }
+}
+
+/* fade-in */
+@keyframes fadein {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+.fadein {
+    animation: fadein 0.18s ease-out;
+}
+
+/* toast */
+@keyframes slidein {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+.toast {
+    animation: slidein 0.25s ease-out;
+}
