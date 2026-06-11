@@ -8,7 +8,7 @@
 {{-- Side drawer. `show` is an Alpine expression; `close` runs on dismiss. --}}
 <div x-show="{{ $show }}" x-cloak class="fixed inset-0 z-50 flex" style="display:none">
     <div class="flex-1 bg-ink-900/30" @click="{{ $close }}"></div>
-    <div class="bg-white shadow-pop flex flex-col fadein" style="width:{{ $width }}px">
+    <div class="bg-white shadow-pop flex flex-col fadein max-w-full" style="width:min({{ $width }}px, 92vw)">
         <div class="px-5 py-4 border-b border-ink-200 flex items-start justify-between">
             <div>
                 <div class="text-[16px] font-semibold text-ink-800">{{ $title }}</div>

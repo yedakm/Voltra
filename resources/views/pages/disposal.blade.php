@@ -44,7 +44,7 @@
     },
 }">
     <x-section-header title="Pelepasan Aset"
-        subtitle="Penjualan / pembuangan unit — gain/loss dihitung dari selisih harga jual dengan nilai buku">
+        subtitle="Penjualan atau pembuangan unit. Laba/rugi dihitung dari selisih harga jual dengan nilai buku.">
         <x-slot:actions>
             <button class="btn btn-primary" @click="createOpen = true"><x-icon name="plus" :size="14" /> Lepas Aset</button>
         </x-slot:actions>

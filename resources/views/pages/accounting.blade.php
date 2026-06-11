@@ -201,7 +201,7 @@
                                     <x-icon name="edit" :size="13" /> Edit
                                 </button>
                             @else
-                                <span class="text-[10.5px] text-ink-400 flex items-center gap-1" title="Periode sudah ditutup — ubah lewat jurnal koreksi">
+                                <span class="text-[10.5px] text-ink-400 flex items-center gap-1" title="Periode sudah ditutup. Ubah lewat jurnal koreksi.">
                                     <x-icon name="check" :size="11" /> Terkunci
                                 </span>
                             @endif
@@ -360,7 +360,7 @@
 
     {{-- ===== Drawer: Edit Jurnal ===== --}}
     <x-drawer show="editJurnalOpen" close="editJurnalOpen = false" :width="720"
-        title="Edit Jurnal" subtitle="Ubah baris jurnal — hanya untuk periode yang masih aktif">
+        title="Edit Jurnal" subtitle="Ubah baris jurnal. Hanya untuk periode yang masih aktif.">
 
         <div class="card p-3 bg-amber-50 border-amber-200 mb-4 text-[12px] text-amber-900">
             Mengedit <span class="mono font-semibold" x-text="ejNoBukti"></span>. Untuk jurnal otomatis (sewa, pembayaran, dst.) perubahan di sini <b>tidak</b> ikut mengubah transaksi sumbernya.
@@ -431,10 +431,10 @@
 
     {{-- ===== Drawer: Jurnal Koreksi ===== --}}
     <x-drawer show="koreksiOpen" close="koreksiOpen = false" :width="760" title="Jurnal Koreksi">
-        <x-slot:subtitle>Koreksi atas <span class="mono font-semibold" x-text="kor.no_bukti_asal"></span> — jurnal asal tidak diubah, jejak audit tetap utuh</x-slot:subtitle>
+        <x-slot:subtitle>Koreksi atas <span class="mono font-semibold" x-text="kor.no_bukti_asal"></span>. Jurnal asal tidak diubah, jejak audit tetap utuh.</x-slot:subtitle>
 
         <div class="card p-3 bg-amber-50 border-amber-200 mb-4 text-[12px] text-amber-900">
-            Koreksi dicatat sebagai <b>jurnal baru</b> (jenis Koreksi) di periode aktif sesuai tanggal di bawah. Pakai <b>Pre-isi pembalik</b> untuk membatalkan jurnal asal, lalu tambahkan baris yang benar bila perlu. (Periode tertutup akan ditolak — pilih tanggal di periode yang masih aktif.)
+            Koreksi dicatat sebagai <b>jurnal baru</b> (jenis Koreksi) di periode aktif sesuai tanggal di bawah. Pakai <b>Pre-isi pembalik</b> untuk membatalkan jurnal asal, lalu tambahkan baris yang benar bila perlu. (Periode tertutup akan ditolak; pilih tanggal di periode yang masih aktif.)
         </div>
 
         {{-- Referensi jurnal asal --}}

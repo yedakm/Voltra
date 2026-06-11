@@ -72,6 +72,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/journal/{id}/update', [AccountingApiController::class, 'updateJournal']);
         Route::post('/period/{id}/close', [AccountingApiController::class, 'closePeriod'])
             ->middleware('role:akuntan,owner');
+        Route::post('/period/{id}/reopen', [AccountingApiController::class, 'reopenPeriod'])
+            ->middleware('role:akuntan,owner');
 
         // Master data & work order
         Route::post('/master/{type}', [MasterController::class, 'store']);

@@ -46,7 +46,7 @@
 }">
 
     <x-section-header title="Serah-Terima Genset"
-        subtitle="Pencatatan pengambilan & pengembalian unit — status dan lokasi terkini diperbarui otomatis">
+        subtitle="Pencatatan pengambilan dan pengembalian unit. Status dan lokasi terkini diperbarui otomatis.">
         <x-slot:actions>
             <button class="btn btn-ghost" @click="window.print()"><x-icon name="download" :size="14" /> Ekspor</button>
             <button class="btn btn-primary" @click="createOpen = true"><x-icon name="plus" :size="14" /> Catat Serah-Terima</button>

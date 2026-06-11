@@ -206,6 +206,7 @@ class VoltraData
             ['kode_akun' => '1-1', 'id_perusahaan' => 1, 'nama_akun' => 'Aset Lancar', 'kategori_akun' => 'aset', 'sub_kategori' => 'header', 'saldo_normal' => 'debit', 'kode_parent' => '1', 'is_aktif' => 1],
             ['kode_akun' => '1-1001', 'id_perusahaan' => 1, 'nama_akun' => 'Kas & Bank', 'kategori_akun' => 'aset', 'sub_kategori' => 'lancar', 'saldo_normal' => 'debit', 'kode_parent' => '1-1', 'is_aktif' => 1],
             ['kode_akun' => '1-1101', 'id_perusahaan' => 1, 'nama_akun' => 'Piutang Usaha', 'kategori_akun' => 'aset', 'sub_kategori' => 'lancar', 'saldo_normal' => 'debit', 'kode_parent' => '1-1', 'is_aktif' => 1],
+            ['kode_akun' => '1-1102', 'id_perusahaan' => 1, 'nama_akun' => 'PPh 23 Dibayar Dimuka', 'kategori_akun' => 'aset', 'sub_kategori' => 'lancar', 'saldo_normal' => 'debit', 'kode_parent' => '1-1', 'is_aktif' => 1],
             ['kode_akun' => '1-1301', 'id_perusahaan' => 1, 'nama_akun' => 'Persediaan Suku Cadang', 'kategori_akun' => 'aset', 'sub_kategori' => 'lancar', 'saldo_normal' => 'debit', 'kode_parent' => '1-1', 'is_aktif' => 1],
             ['kode_akun' => '1-2', 'id_perusahaan' => 1, 'nama_akun' => 'Aset Tetap', 'kategori_akun' => 'aset', 'sub_kategori' => 'header', 'saldo_normal' => 'debit', 'kode_parent' => '1', 'is_aktif' => 1],
             ['kode_akun' => '1-2001', 'id_perusahaan' => 1, 'nama_akun' => 'Aset Tetap - Genset', 'kategori_akun' => 'aset', 'sub_kategori' => 'tetap', 'saldo_normal' => 'debit', 'kode_parent' => '1-2', 'is_aktif' => 1],
@@ -478,10 +479,14 @@ class VoltraData
             'detail_jurnal' => $detailJurnal,
             'jadwal_ketersediaan' => $jadwalKetersediaan,
             'jadwal_penyusutan' => $jadwalPenyusutan,
-            // lookups
-            'kategoriById' => self::indexBy($kategori, 'id_kategori'),
-            'supplierById' => self::indexBy($supplier, 'id_supplier'),
-            'merekById' => self::indexBy($merek, 'id_merek'),
+            // lookups — entri kunci '' adalah fallback untuk FK nullable
+            // (genset boleh tanpa merek/kategori/supplier; view tidak boleh crash)
+            'kategoriById' => self::indexBy($kategori, 'id_kategori')
+                + ['' => ['id_kategori' => null, 'kapasitas' => '—', 'umur_ekonomis_default' => 0, 'estimasi_nilai_residu' => 0]],
+            'supplierById' => self::indexBy($supplier, 'id_supplier')
+                + ['' => ['id_supplier' => null, 'nama_supplier' => '—', 'pic_kontak' => '', 'no_telepon' => '', 'email' => '', 'alamat' => '']],
+            'merekById' => self::indexBy($merek, 'id_merek')
+                + ['' => ['id_merek' => null, 'nama_merek' => '—', 'negara_asal' => '', 'keterangan' => '']],
             'gensetById' => self::indexBy($genset, 'id_genset'),
             'pelangganById' => self::indexBy($pelanggan, 'id_pelanggan'),
             'penggunaById' => self::indexBy($pengguna, 'id_pengguna'),

@@ -226,7 +226,7 @@ class MasterController extends Controller
         [$modelClass, $pk, $label, $guard] = match ($type) {
             'pelanggan' => [Pelanggan::class, 'id_pelanggan', 'Pelanggan',
                 fn () => TransaksiSewa::where('id_pelanggan', $id)->exists()
-                    ? 'Pelanggan masih punya transaksi sewa — tidak bisa dihapus.' : null],
+                    ? 'Pelanggan masih punya transaksi sewa, tidak bisa dihapus.' : null],
 
             'supplier' => [Supplier::class, 'id_supplier', 'Supplier', null],
 
@@ -234,7 +234,7 @@ class MasterController extends Controller
 
             'suku-cadang' => [SukuCadang::class, 'id_part', 'Suku cadang',
                 fn () => DetailPemeliharaan::where('id_part', $id)->exists()
-                    ? 'Suku cadang sudah dipakai di work order — tidak bisa dihapus.' : null],
+                    ? 'Suku cadang sudah dipakai di work order, tidak bisa dihapus.' : null],
 
             default => [null, null, null, null],
         };

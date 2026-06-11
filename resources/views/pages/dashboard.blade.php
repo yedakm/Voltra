@@ -193,7 +193,7 @@
                 <div class="mt-0.5 text-amber-600"><x-icon name="warn" :size="14" /></div>
                 <div class="flex-1">
                     <div class="text-ink-800 font-medium">1 unit overhaul tertunda</div>
-                    <div class="text-ink-500 mt-0.5">Genset CMN-500-0303 — status rusak</div>
+                    <div class="text-ink-500 mt-0.5">Genset CMN-500-0303 berstatus rusak</div>
                 </div>
             </div>
             @foreach ($lowStock->take(3) as $p)

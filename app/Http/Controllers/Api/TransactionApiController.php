@@ -27,6 +27,23 @@ class TransactionApiController extends Controller
 {
     public function __construct(protected JournalService $journal) {}
 
+    /**
+     * Transaksi baru wajib jatuh di periode akuntansi yang masih aktif.
+     * Dicek SEBELUM ada data tersimpan, supaya tidak terjadi invoice/pembayaran
+     * yatim ketika penjurnalan ditolak JournalService.
+     */
+    private function periodeDitutup(int $idPerusahaan, string $tanggal): bool
+    {
+        return $this->journal->resolvePeriode($idPerusahaan, $tanggal)->status === 'ditutup';
+    }
+
+    private function responsPeriodeDitutup(string $tanggal)
+    {
+        return response()->json([
+            'message' => 'Periode akuntansi untuk tanggal ' . $tanggal . ' sudah ditutup. Transaksi tidak dapat dijurnalkan. Gunakan jurnal koreksi atau pilih tanggal pada periode aktif.',
+        ], 422);
+    }
+
     /** POST /api/rental — buat sewa + invoice + jurnal Pendapatan/Piutang. */
     public function storeRental(Request $request)
     {
@@ -48,6 +65,31 @@ class TransactionApiController extends Controller
 
         $user = $request->user();
         $tid = $user->id_perusahaan;
+
+        if ($this->periodeDitutup($tid, now()->toDateString())) {
+            return $this->responsPeriodeDitutup(now()->toDateString());
+        }
+
+        // Validasi tiap unit: milik tenant ini & tidak bentrok jadwal (Bab 4.2.2 TA —
+        // sistem menolak tumpang tindih sebelum kontrak dibuat).
+        foreach ($data['items'] as $it) {
+            $genset = Genset::where('id_perusahaan', $tid)->find($it['id_genset']);
+            if (! $genset) {
+                return response()->json(['message' => 'Genset tidak ditemukan pada perusahaan Anda.'], 422);
+            }
+
+            $bentrok = JadwalKetersediaan::where('id_genset', $it['id_genset'])
+                ->whereBetween('tanggal', [$it['start_date'], $it['end_date']])
+                ->whereIn('status', ['disewa', 'maintenance', 'tidak_tersedia'])
+                ->orderBy('tanggal')
+                ->first();
+            if ($bentrok) {
+                return response()->json([
+                    'message' => 'Unit ' . $genset->nomor_seri . ' tidak tersedia pada ' . $bentrok->tanggal
+                        . ' (status: ' . $bentrok->status . '). Pilih unit atau rentang tanggal lain.',
+                ], 422);
+            }
+        }
 
         // Satuan sewa: 'harian' (per hari) atau 'bulanan' (per 30 hari).
         $satuan = $data['satuan_sewa'] ?? 'harian';
@@ -158,7 +200,7 @@ class TransactionApiController extends Controller
 
         if ($sewa->status_pembayaran !== 'belum_bayar') {
             return response()->json([
-                'message' => 'Invoice sudah ada pembayaran — tidak bisa diedit.',
+                'message' => 'Invoice sudah ada pembayaran, tidak bisa diedit.',
             ], 422);
         }
 
@@ -172,7 +214,7 @@ class TransactionApiController extends Controller
             $periode = PeriodeAkuntansi::where('id_perusahaan', $tid)->find($jurnal->id_periode);
             if ($periode && $periode->status === 'ditutup') {
                 return response()->json([
-                    'message' => 'Periode jurnal invoice ini sudah ditutup — ubah lewat jurnal koreksi.',
+                    'message' => 'Periode jurnal invoice ini sudah ditutup. Ubah lewat jurnal koreksi.',
                 ], 422);
             }
         }
@@ -256,6 +298,20 @@ class TransactionApiController extends Controller
             ->findOrFail($data['id_sewa']);
         $tglBayar = $data['tgl_bayar'] ?? now()->toDateString();
 
+        if ($this->periodeDitutup($user->id_perusahaan, $tglBayar)) {
+            return $this->responsPeriodeDitutup($tglBayar);
+        }
+
+        // Tolak pembayaran melebihi sisa tagihan (total kas = tagihan + PPN - PPh).
+        $totalTagihan = (float) $sewa->total_tagihan + (float) $sewa->pajak - (float) ($sewa->pph ?? 0);
+        $sudahDibayar = (float) Pembayaran::where('id_sewa', $sewa->id_sewa)->sum('nominal_bayar');
+        $sisa = $totalTagihan - $sudahDibayar;
+        if ((float) $data['nominal_bayar'] > $sisa) {
+            return response()->json([
+                'message' => 'Nominal melebihi sisa tagihan (Rp ' . number_format($sisa, 0, ',', '.') . ').',
+            ], 422);
+        }
+
         $bayar = Pembayaran::create([
             'id_perusahaan' => $user->id_perusahaan,
             'id_sewa' => $sewa->id_sewa,
@@ -306,6 +362,11 @@ class TransactionApiController extends Controller
         ]);
 
         $user = $request->user();
+
+        if ($this->periodeDitutup($user->id_perusahaan, $data['tgl_perolehan'])) {
+            return $this->responsPeriodeDitutup($data['tgl_perolehan']);
+        }
+
         $genset = Genset::create([
             'id_perusahaan' => $user->id_perusahaan,
             'id_kategori' => $data['id_kategori'],
@@ -355,6 +416,10 @@ class TransactionApiController extends Controller
         $nilaiBuku = (float) $genset->harga_perolehan - $akumulasi;
         $gainLoss = (float) $data['harga_jual'] - $nilaiBuku;
         $tglJual = $data['tgl_jual'] ?? now()->toDateString();
+
+        if ($this->periodeDitutup($user->id_perusahaan, $tglJual)) {
+            return $this->responsPeriodeDitutup($tglJual);
+        }
 
         $jual = PenjualanGenset::create([
             'id_perusahaan' => $user->id_perusahaan,
@@ -410,6 +475,8 @@ class TransactionApiController extends Controller
 
         $user = $request->user();
         $genset = Genset::where('id_perusahaan', $user->id_perusahaan)->findOrFail($data['id_genset']);
+        // Pastikan kontrak sewa yang dirujuk juga milik tenant ini.
+        TransaksiSewa::where('id_perusahaan', $user->id_perusahaan)->findOrFail($data['id_sewa']);
 
         $ho = Pengembalian::create($data + ['dicatat_oleh' => $user->id_pengguna]);
 
@@ -488,7 +555,7 @@ class TransactionApiController extends Controller
         $wo = Pemeliharaan::where('id_perusahaan', $user->id_perusahaan)->findOrFail($id);
 
         if ($wo->tgl_selesai) {
-            return response()->json(['message' => 'Servis sudah selesai — tidak bisa diubah.'], 422);
+            return response()->json(['message' => 'Servis sudah selesai, tidak bisa diubah.'], 422);
         }
 
         $data = $request->validate([
@@ -515,7 +582,7 @@ class TransactionApiController extends Controller
         $wo = Pemeliharaan::where('id_perusahaan', $user->id_perusahaan)->findOrFail($id);
 
         if ($wo->tgl_selesai) {
-            return response()->json(['message' => 'Servis sudah selesai — tidak bisa menambah suku cadang.'], 422);
+            return response()->json(['message' => 'Servis sudah selesai, tidak bisa menambah suku cadang.'], 422);
         }
 
         $data = $request->validate([
@@ -556,7 +623,7 @@ class TransactionApiController extends Controller
         $part->refresh();
 
         return response()->json([
-            'message' => 'Pemakaian suku cadang dicatat · stok dipotong.',
+            'message' => 'Pemakaian suku cadang dicatat. Stok ikut dipotong.',
             'detail' => $row,
             'stok_tersisa' => $part->stok_tersedia,
         ], 201);
@@ -580,6 +647,10 @@ class TransactionApiController extends Controller
         $partsCost = (float) $parts->sum('subtotal_harga_part');
         $external = (float) $wo->biaya_jasa_eksternal;
         $total = $partsCost + $external;
+
+        if ($total > 0 && $this->periodeDitutup($user->id_perusahaan, now()->toDateString())) {
+            return $this->responsPeriodeDitutup(now()->toDateString());
+        }
 
         DB::connection('voltra')->transaction(function () use ($wo) {
             $wo->update(['tgl_selesai' => now()->toDateString()]);
@@ -613,15 +684,22 @@ class TransactionApiController extends Controller
     /** POST /api/opex — catat beban operasional + jurnal Pengeluaran Kas. */
     public function storeOpex(Request $request)
     {
+        $user = $request->user();
+
         $data = $request->validate([
             'tanggal' => ['required', 'date'],
             'nominal' => ['required', 'numeric', 'min:1'],
-            'kode_akun' => ['required', 'string'],
+            'kode_akun' => ['required', 'string',
+                \Illuminate\Validation\Rule::exists('voltra_akuntansi.akun_perkiraan', 'kode_akun')
+                    ->where('id_perusahaan', $user->id_perusahaan)],
             'keterangan' => ['nullable', 'string'],
             'id_sewa' => ['nullable', 'integer'],
         ]);
 
-        $user = $request->user();
+        if ($this->periodeDitutup($user->id_perusahaan, $data['tanggal'])) {
+            return $this->responsPeriodeDitutup($data['tanggal']);
+        }
+
         $idSewa = $data['id_sewa'] ?? null;
         $jurnal = $this->journal->post(
             idPerusahaan: $user->id_perusahaan,

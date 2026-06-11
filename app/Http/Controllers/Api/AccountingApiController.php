@@ -84,7 +84,7 @@ class AccountingApiController extends Controller
         $periode = PeriodeAkuntansi::where('id_perusahaan', $tid)->find($jurnal->id_periode);
         if ($periode && $periode->status === 'ditutup') {
             return response()->json([
-                'message' => 'Periode jurnal ini sudah ditutup — perubahan harus lewat jurnal koreksi.',
+                'message' => 'Periode jurnal ini sudah ditutup. Perubahan harus lewat jurnal koreksi.',
             ], 422);
         }
 
@@ -198,6 +198,24 @@ class AccountingApiController extends Controller
         }
 
         return response()->json(['message' => 'Periode ditutup.', 'periode' => $closed]);
+    }
+
+    /** POST /api/period/{id}/reopen — buka kembali periode (RBAC: akuntan/owner). */
+    public function reopenPeriod(Request $request, PeriodClosingService $service, int $id)
+    {
+        $periode = PeriodeAkuntansi::where('id_perusahaan', $request->user()->id_perusahaan)
+            ->findOrFail($id);
+
+        try {
+            $reopened = $service->reopen($periode);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'message' => 'Periode dibuka kembali. Penjurnalan di bulan ini aktif lagi.',
+            'periode' => $reopened,
+        ]);
     }
 
     /** GET /api/reports/{type} — laba-rugi | neraca | arus-kas. */

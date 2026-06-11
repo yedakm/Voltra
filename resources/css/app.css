@@ -211,3 +211,30 @@
 .toast {
     animation: slidein 0.25s ease-out;
 }
+
+/* ====== Responsive — HP & tablet ====== */
+/* Tabel di dalam card bisa di-scroll horizontal, tidak menggencet kolom */
+@media (max-width: 1023px) {
+    .card:has(> table) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .card > table {
+        min-width: 680px;
+    }
+}
+
+/* Grid kartu statistik menyesuaikan lebar layar */
+@media (max-width: 767px) {
+    .grid.grid-cols-3,
+    .grid.grid-cols-4,
+    .grid.grid-cols-5 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 470px) {
+    .grid.grid-cols-4,
+    .grid.grid-cols-5 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

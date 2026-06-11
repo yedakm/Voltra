@@ -44,7 +44,7 @@ class DepreciationService
         $totalBeban = 0.0;
         $pending = [];
 
-        DB::transaction(function () use ($gensets, $idPerusahaan, $periode, $periodeBulan, &$totalBeban, &$pending) {
+        DB::connection('voltra_akuntansi')->transaction(function () use ($gensets, $idPerusahaan, $periode, $periodeBulan, &$totalBeban, &$pending) {
             foreach ($gensets as $g) {
                 $umur = max(1, (int) $g->umur_ekonomis_aktual);
                 $beban = round(((float) $g->harga_perolehan - (float) $g->nilai_residu_aktual) / $umur);

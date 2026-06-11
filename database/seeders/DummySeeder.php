@@ -33,6 +33,12 @@ class DummySeeder extends Seeder
         ];
         $ops->table('perusahaan')->insert($perusahaan);
 
+        // Kode undangan tetap, supaya alur "gabung perusahaan" bisa langsung
+        // didemokan setelah seeding (lihat menu Perusahaan).
+        foreach ([1 => 'VOLTRA01', 2 => 'BORNEO02', 3 => 'PRIMA003'] as $id => $kode) {
+            $ops->table('perusahaan')->where('id_perusahaan', $id)->update(['kode_undangan' => $kode]);
+        }
+
         // 3. pengguna — tambah password (kolom NOT NULL) + akun yeda owner.
         $pengguna = array_map(fn ($u) => $u + ['password' => $pw], VoltraData::pengguna());
         $pengguna[] = [
@@ -46,6 +52,11 @@ class DummySeeder extends Seeder
         $pengguna[] = [
             'id_pengguna' => 9, 'id_perusahaan' => 3, 'nama' => 'Owner Prima', 'email' => 'owner@dayaprima.id',
             'password' => $pw, 'role' => 'owner', 'avatar' => 'OP',
+        ];
+        // Akun demo publik, untuk pengunjung yang ingin mencoba aplikasi.
+        $pengguna[] = [
+            'id_pengguna' => 10, 'id_perusahaan' => 1, 'nama' => 'Akun Demo', 'email' => 'demo@voltra.id',
+            'password' => $pw, 'role' => 'owner', 'avatar' => 'DM',
         ];
         $ops->table('pengguna')->insert($pengguna);
 

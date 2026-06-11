@@ -60,7 +60,7 @@
     fmt: window.fmtIDR,
 }" x-init="$watch('createOpen', v => { if (v) step = 1; })">
 
-    <x-section-header title="Penyewaan" subtitle="Kontrak sewa & invoice — jurnal akuntansi ter-generate otomatis">
+    <x-section-header title="Penyewaan" subtitle="Kontrak sewa dan invoice. Jurnal akuntansi dibuat otomatis saat invoice terbit.">
         <x-slot:actions>
             <button class="btn btn-ghost" @click="window.print()"><x-icon name="download" :size="14" /> Ekspor</button>
             <button class="btn btn-primary" @click="createOpen = true"><x-icon name="plus" :size="14" /> Sewa Baru</button>

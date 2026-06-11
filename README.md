@@ -23,8 +23,18 @@ aset metode **Garis Lurus / Straight Line**. Dibangun **Laravel 12 + Blade + Alp
    php artisan voltra:depreciate --periode=2026-05   # jalankan manual
    ```
 
-Kredensial demo: `andi@voltra.id` / `password` (perusahaan #1, role admin).
+**Akun demo**: `demo@voltra.id` / `12345678` (owner, perusahaan #1, semua menu terbuka).
+Akun role lain (password sama): `andi@voltra.id` (admin), `eka@voltra.id` (akuntan),
+`bima@voltra.id` (teknisi), `faisal@voltra.id` (operator).
 Tersedia 5 role: owner, admin, operator, teknisi, akuntan.
+
+Mendaftar ke perusahaan yang sudah ada memakai **kode undangan** (lihat menu
+Perusahaan). Kode hasil seeding: `VOLTRA01` (perusahaan #1).
+
+Menjalankan test (perlu MySQL dev aktif; data otomatis di-rollback):
+```bash
+php artisan test
+```
 
 ## Arsitektur Backend
 

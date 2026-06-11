@@ -39,10 +39,12 @@ class JournalService
 
         $periode = $this->resolvePeriode($idPerusahaan, $tanggal);
         if ($periode->status === 'ditutup') {
-            throw new RuntimeException('Periode akuntansi sudah ditutup — penjurnalan ditolak.');
+            throw new RuntimeException('Periode akuntansi sudah ditutup. Penjurnalan ditolak.');
         }
 
-        return DB::transaction(function () use (
+        // Transaksi harus di koneksi voltra_akuntansi — DB::transaction tanpa
+        // koneksi memakai default (voltra) dan tidak melindungi tabel jurnal.
+        return DB::connection('voltra_akuntansi')->transaction(function () use (
             $idPerusahaan, $periode, $jenisJurnal, $tanggal, $lines,
             $totalDebit, $totalKredit, $keterangan, $referensiTipe, $referensiId, $dibuatOleh
         ) {

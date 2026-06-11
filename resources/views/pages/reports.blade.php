@@ -129,7 +129,7 @@
                 <div class="text-[13px] font-semibold text-ink-800 mb-4">Grafik Komposisi Neraca</div>
                 <div class="space-y-4">
                     <div>
-                        <div class="text-[12px] text-ink-600 mb-1">Aset — <span class="mono font-medium">{{ fmtIDR($totalAset) }}</span></div>
+                        <div class="text-[12px] text-ink-600 mb-1">Aset: <span class="mono font-medium">{{ fmtIDR($totalAset) }}</span></div>
                         <div class="flex h-5 rounded-md overflow-hidden bg-ink-100">
                             <div style="background:#177f8a;width:{{ round(max(0, $kas) / $totN * 100, 1) }}%" title="Kas &amp; Bank: {{ fmtIDR($kas) }}"></div>
                             <div style="background:#1f9aa6;width:{{ round(max(0, $piutang) / $totN * 100, 1) }}%" title="Piutang: {{ fmtIDR($piutang) }}"></div>
@@ -144,7 +144,7 @@
                         </div>
                     </div>
                     <div>
-                        <div class="text-[12px] text-ink-600 mb-1">Kewajiban + Ekuitas — <span class="mono font-medium">{{ fmtIDR($totalAset) }}</span></div>
+                        <div class="text-[12px] text-ink-600 mb-1">Kewajiban + Ekuitas: <span class="mono font-medium">{{ fmtIDR($totalAset) }}</span></div>
                         <div class="flex h-5 rounded-md overflow-hidden bg-ink-100">
                             <div style="background:#a6700f;width:{{ round(max(0, $totalKewajiban) / $totN * 100, 1) }}%" title="Kewajiban: {{ fmtIDR($totalKewajiban) }}"></div>
                             <div style="background:#5b2ea8;width:{{ round(max(0, $modal) / $totN * 100, 1) }}%" title="Modal: {{ fmtIDR($modal) }}"></div>

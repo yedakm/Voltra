@@ -36,9 +36,8 @@
 
     {{-- ===== Register form ===== --}}
     <div class="flex-1 flex items-center justify-center p-8 bg-white">
-        @php $hasPerusahaan = $perusahaan->isNotEmpty(); @endphp
         <form method="POST" action="{{ route('register.submit') }}" class="w-full max-w-sm"
-              x-data="{ loading: false, mode: '{{ old('mode', $hasPerusahaan ? 'join' : 'new') }}' }"
+              x-data="{ loading: false, mode: '{{ old('mode', 'new') }}' }"
               @submit="loading = true">
             @csrf
             <div class="text-[20px] font-semibold text-ink-800">Daftar Akun</div>
@@ -61,9 +60,8 @@
                     Buat perusahaan baru
                 </label>
                 <label class="flex-1 border rounded-md px-3 py-2 cursor-pointer text-[12.5px]"
-                       :class="mode === 'join' ? 'border-brand-500 bg-brand-50/40 text-brand-800' : 'border-ink-200 text-ink-700'"
-                       @if (! $hasPerusahaan) style="opacity:.5;pointer-events:none" @endif>
-                    <input type="radio" name="mode" value="join" x-model="mode" class="mr-1.5" @if (! $hasPerusahaan) disabled @endif />
+                       :class="mode === 'join' ? 'border-brand-500 bg-brand-50/40 text-brand-800' : 'border-ink-200 text-ink-700'">
+                    <input type="radio" name="mode" value="join" x-model="mode" class="mr-1.5" />
                     Gabung yang sudah ada
                 </label>
             </div>
@@ -75,15 +73,10 @@
                     </x-form-field>
                 </div>
                 <div x-show="mode === 'join'" x-cloak>
-                    <x-form-field label="Perusahaan" :required="true">
-                        <select class="inp" name="id_perusahaan">
-                            <option value="">— Pilih perusahaan —</option>
-                            @foreach ($perusahaan as $p)
-                                <option value="{{ $p->id_perusahaan }}" @selected(old('id_perusahaan') == $p->id_perusahaan)>
-                                    {{ $p->nama_perusahaan }}
-                                </option>
-                            @endforeach
-                        </select>
+                    <x-form-field label="Kode Undangan" :required="true"
+                        hint="Minta kode 8 karakter dari owner/admin perusahaan Anda (menu Perusahaan)">
+                        <input class="inp uppercase tracking-widest mono" name="kode_undangan" maxlength="12"
+                               placeholder="MIS. A1B2C3D4" value="{{ old('kode_undangan') }}" autocomplete="off" />
                     </x-form-field>
                 </div>
                 <x-form-field label="Nama Lengkap" :required="true">

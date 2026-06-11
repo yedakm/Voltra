@@ -75,7 +75,7 @@
 }">
     <x-section-header
         :title="$sub === 'parts' ? 'Suku Cadang' : 'Pemeliharaan'"
-        :subtitle="$sub === 'parts' ? 'Stok suku cadang milik perusahaan' : 'Servis rutin, perbaikan, & overhaul unit — pemakaian suku cadang dikurangi otomatis dari stok'">
+        :subtitle="$sub === 'parts' ? 'Stok suku cadang milik perusahaan' : 'Servis rutin, perbaikan, dan overhaul unit. Pemakaian suku cadang otomatis mengurangi stok.'">
         <x-slot:actions>
             <button class="btn btn-ghost" @click="window.print()"><x-icon name="download" :size="14" /> Ekspor</button>
             <button class="btn btn-primary" @click="createOpen = true"><x-icon name="plus" :size="14" /> {{ $sub === 'parts' ? 'Part Baru' : 'Buat Servis' }}</button>
@@ -250,7 +250,7 @@
                                 <input type="date" class="inp" x-model="edit.tgl_mulai_servis" />
                             </x-form-field>
                             <div class="col-span-2">
-                                <x-form-field label="Biaya Jasa Eksternal" hint="Tambahkan biaya servis pihak luar (bengkel, dll.) — boleh diubah kapan saja sebelum WO selesai">
+                                <x-form-field label="Biaya Jasa Eksternal" hint="Biaya servis pihak luar (bengkel, dll.). Boleh diubah selama servis belum selesai.">
                                     <input type="number" min="0" class="inp" x-model.number="edit.biaya_jasa_eksternal" />
                                 </x-form-field>
                             </div>

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -51,9 +52,9 @@ class AuthController extends Controller
 
     public function showRegister()
     {
-        return view('pages.register', [
-            'perusahaan' => Perusahaan::orderBy('nama_perusahaan')->get(),
-        ]);
+        // Daftar perusahaan TIDAK diekspos ke publik (privasi multi-tenant).
+        // Bergabung ke perusahaan lain memakai kode undangan dari owner/admin.
+        return view('pages.register');
     }
 
     public function register(Request $request)
@@ -64,21 +65,36 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'mode' => ['required', Rule::in(['new', 'join'])],
             'nama_perusahaan' => ['required_if:mode,new', 'nullable', 'string', 'max:150'],
-            'id_perusahaan' => ['required_if:mode,join', 'nullable', 'integer', Rule::exists('voltra.perusahaan', 'id_perusahaan')],
+            'kode_undangan' => ['required_if:mode,join', 'nullable', 'string', 'max:12'],
         ]);
 
-        DB::connection('voltra')->transaction(function () use ($data) {
+        // Validasi kode undangan di luar closure agar pesan errornya jelas.
+        $target = null;
+        if ($data['mode'] === 'join') {
+            $target = Perusahaan::where('kode_undangan', strtoupper(trim($data['kode_undangan'])))
+                ->where('status_aktif', true)
+                ->first();
+
+            if (! $target) {
+                throw ValidationException::withMessages([
+                    'kode_undangan' => 'Kode undangan tidak dikenal. Minta kode dari owner/admin perusahaan Anda.',
+                ]);
+            }
+        }
+
+        DB::connection('voltra')->transaction(function () use ($data, $target) {
             if ($data['mode'] === 'new') {
                 $perusahaan = Perusahaan::create([
                     'nama_perusahaan' => $data['nama_perusahaan'],
                     'status_aktif' => true,
                     'tgl_bergabung' => now()->toDateString(),
+                    'kode_undangan' => strtoupper(Str::random(8)),
                 ]);
                 $idPerusahaan = $perusahaan->id_perusahaan;
                 $role = 'owner';
                 $this->seedDefaultCoa($idPerusahaan);
             } else {
-                $idPerusahaan = (int) $data['id_perusahaan'];
+                $idPerusahaan = $target->id_perusahaan;
                 $role = 'operator';
             }
 

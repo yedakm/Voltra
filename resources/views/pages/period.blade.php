@@ -9,12 +9,19 @@
 @endphp
 
 <div x-data="{
-    closing: null, saving: false,
+    closing: null, previewing: null, saving: false,
     tutupBuku(idPeriode, label) {
         if (this.saving) return;
         this.saving = true;
         window.voltraSave('/aksi/period/' + idPeriode + '/close',
-            {}, 'Periode ' + label + ' berhasil ditutup · laporan ter-generate.').catch(() => this.saving = false);
+            {}, 'Periode ' + label + ' berhasil ditutup. Laporan tersedia di menu Laporan.').catch(() => this.saving = false);
+    },
+    bukaKembali(idPeriode, label) {
+        if (this.saving) return;
+        if (!confirm('Buka kembali periode ' + label + '? Penjurnalan di bulan ini akan aktif lagi sampai ditutup ulang.')) return;
+        this.saving = true;
+        window.voltraSave('/aksi/period/' + idPeriode + '/reopen',
+            {}, 'Periode ' + label + ' dibuka kembali. Penjurnalan aktif lagi.').catch(() => this.saving = false);
     },
 }">
     <x-section-header title="Tutup Buku Periode"
@@ -61,7 +68,17 @@
                             @if ($r['status'] === 'aktif')
                                 <button class="btn btn-primary text-[11px]" @click="closing = {{ $r['id_periode'] }}">Tutup Buku</button>
                             @else
-                                <a href="{{ route('reports') }}" class="btn btn-ghost text-[11px]">Lihat Laporan</a>
+                                <div class="flex items-center gap-1.5">
+                                    <button class="btn btn-ghost text-[11px]" @click="previewing = {{ $r['id_periode'] }}"
+                                        title="Lihat catatan periode ini tanpa membukanya">
+                                        Pratinjau
+                                    </button>
+                                    <button class="btn btn-ghost text-[11px] text-amber-600" :disabled="saving"
+                                        @click="bukaKembali({{ $r['id_periode'] }}, '{{ $months[$r['bulan'] - 1] }} {{ $r['tahun'] }}')"
+                                        title="Buka kembali periode untuk koreksi catatan">
+                                        Buka Kembali
+                                    </button>
+                                </div>
                             @endif
                         </td>
                     </tr>
@@ -132,6 +149,67 @@
                     @click="tutupBuku({{ $r['id_periode'] }}, '{{ $months[$r['bulan'] - 1] }} {{ $r['tahun'] }}')">
                     <x-icon name="check" :size="14" /> {{ $allOk ? 'Konfirmasi Tutup Buku' : 'Perbaiki Validasi' }}
                 </button>
+            </x-slot:footer>
+        </x-drawer>
+    @endforeach
+
+    {{-- ===== Pratinjau periode ditutup (hanya lihat, tidak membuka kunci) ===== --}}
+    @foreach ($periode->where('status', 'ditutup') as $r)
+        @php
+            $journals = $jurnal->where('id_periode', $r['id_periode'])->sortBy('tanggal');
+            $jenisLabel = ['pembelian_aset' => 'Pembelian Aset', 'sewa' => 'Sewa', 'pembayaran' => 'Pembayaran',
+                'pemeliharaan' => 'Pemeliharaan', 'beban_operasional' => 'Beban Operasional', 'penyusutan' => 'Penyusutan',
+                'penjualan_aset' => 'Penjualan Aset', 'penyesuaian' => 'Penyesuaian', 'penutup' => 'Penutup',
+                'manual' => 'Manual', 'koreksi' => 'Koreksi'];
+        @endphp
+        <x-drawer show="previewing === {{ $r['id_periode'] }}" close="previewing = null" :width="640"
+            :title="'Pratinjau · '.$months[$r['bulan'] - 1].' '.$r['tahun']"
+            :subtitle="'Periode terkunci. Catatan di bawah hanya untuk dilihat.'">
+
+            <div class="card p-4 grid grid-cols-2 gap-3 text-[12.5px] mb-5">
+                <div><div class="text-ink-500">Total Jurnal</div><div class="font-semibold">{{ $journals->count() }}</div></div>
+                <div><div class="text-ink-500">Total Debit / Kredit</div><div class="font-semibold mono">{{ fmtIDR($journals->sum('total_debit')) }}</div></div>
+                <div><div class="text-ink-500">Ditutup Pada</div><div class="font-semibold">{{ $r['tgl_tutup_buku'] ? fmtDate($r['tgl_tutup_buku']) : '—' }}</div></div>
+                <div><div class="text-ink-500">Ditutup Oleh</div><div class="font-semibold">{{ $r['ditutup_oleh'] ? ($penggunaById[$r['ditutup_oleh']]['nama'] ?? '—') : '—' }}</div></div>
+            </div>
+
+            <div class="text-[12px] font-semibold text-ink-700 uppercase tracking-wider mb-2">Catatan Jurnal Periode Ini</div>
+            @if ($journals->isEmpty())
+                <div class="card p-4 text-[12.5px] text-ink-500">Tidak ada jurnal pada periode ini.</div>
+            @else
+                <div class="card overflow-hidden">
+                    <table class="w-full text-[12px]">
+                        <thead>
+                            <tr class="bg-ink-50 border-b border-ink-200 text-ink-500 text-[10.5px] uppercase tracking-wider">
+                                <th class="px-3 py-2 text-left font-semibold">No. Bukti</th>
+                                <th class="px-3 py-2 text-left font-semibold">Tanggal</th>
+                                <th class="px-3 py-2 text-left font-semibold">Jenis</th>
+                                <th class="px-3 py-2 text-left font-semibold">Keterangan</th>
+                                <th class="px-3 py-2 text-right font-semibold">Nominal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($journals as $j)
+                                <tr class="border-b border-ink-100">
+                                    <td class="px-3 py-2 mono">{{ $j['no_bukti'] }}</td>
+                                    <td class="px-3 py-2">{{ fmtDate($j['tanggal']) }}</td>
+                                    <td class="px-3 py-2">{{ $jenisLabel[$j['jenis_jurnal']] ?? $j['jenis_jurnal'] }}</td>
+                                    <td class="px-3 py-2 text-ink-600">{{ \Illuminate\Support\Str::limit($j['keterangan'], 40) }}</td>
+                                    <td class="px-3 py-2 text-right mono">{{ fmtIDR($j['total_debit']) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+
+            <div class="card p-3 bg-ink-50 mt-4 text-[12px] text-ink-600">
+                Ingin mengubah catatan di bulan ini? Tutup pratinjau lalu klik tombol <span class="font-semibold">Buka Kembali</span>.
+            </div>
+
+            <x-slot:footer>
+                <a href="{{ route('reports') }}" class="btn btn-ghost">Lihat Laporan</a>
+                <button class="btn btn-primary" @click="previewing = null">Tutup</button>
             </x-slot:footer>
         </x-drawer>
     @endforeach

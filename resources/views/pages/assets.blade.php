@@ -55,7 +55,7 @@
 }">
 
     <x-section-header title="Aset Genset"
-        subtitle="Daftar unit genset milik perusahaan · penyusutan dihitung otomatis tiap bulan">
+        subtitle="Daftar unit genset milik perusahaan. Penyusutan dihitung otomatis tiap bulan.">
         <x-slot:actions>
             <button class="btn btn-ghost" @click="window.print()"><x-icon name="download" :size="14" /> Ekspor</button>
             <button class="btn btn-ghost" @click="kategoriOpen = true"><x-icon name="tag" :size="14" /> Kategori</button>
@@ -175,7 +175,7 @@
                             <x-field label="Umur Ekonomis (aktual)" hint="Default kategori: {{ $k['umur_ekonomis_default'] }} bulan">{{ $g['umur_ekonomis_aktual'] }} bulan</x-field>
                             <x-field label="Umur Berjalan">{{ $info['monthsElapsed'] }} bulan</x-field>
                             <div class="col-span-2">
-                                <x-field label="Lokasi Terkini (diinput manual)" hint="Diupdate via Serah-Terima — bukan GPS real-time">
+                                <x-field label="Lokasi Terkini (diinput manual)" hint="Diperbarui lewat menu Serah-Terima">
                                     <div class="font-medium">{{ $g['lokasi_terkini'] }}</div>
                                 </x-field>
                             </div>
@@ -283,7 +283,7 @@
     {{-- ===== Purchase drawer ===== --}}
     <x-drawer show="createOpen" close="createOpen = false" :width="620"
         title="Pembelian Genset Baru"
-        subtitle="Aset masuk — jurnal Pembelian Aset Tetap akan ter-generate otomatis">
+        subtitle="Aset masuk. Jurnal Pembelian Aset Tetap dibuat otomatis.">
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <x-form-field label="Kategori" :required="true">

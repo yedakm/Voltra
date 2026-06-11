@@ -41,7 +41,7 @@
 @endphp
 
 <x-section-header title="Kalender Ketersediaan"
-    subtitle="Pantau jadwal unit per hari — tersedia, disewa, sedang diservis, atau tidak tersedia">
+    subtitle="Pantau jadwal unit per hari: tersedia, disewa, sedang diservis, atau tidak tersedia">
     <x-slot:actions>
         <a href="{{ route('rental') }}" class="btn btn-primary"><x-icon name="plus" :size="14" /> Booking</a>
     </x-slot:actions>

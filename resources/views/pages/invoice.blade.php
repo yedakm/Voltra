@@ -131,7 +131,7 @@
 
     <x-drawer show="open !== null" close="open = null" :width="500" title="Catat Pembayaran">
         <x-slot:subtitle>
-            <span class="mono" x-text="pay.no_invoice"></span> — isi sebagian untuk <b>DP</b>, atau penuh untuk lunas
+            <span class="mono" x-text="pay.no_invoice"></span>: isi sebagian untuk <b>DP</b>, atau penuh untuk lunas
         </x-slot:subtitle>
 
         <div class="space-y-4">
@@ -180,7 +180,7 @@
 
     {{-- ===== Drawer: Edit Invoice ===== --}}
     <x-drawer show="editOpen" close="editOpen = false" :width="560" title="Edit Invoice">
-        <x-slot:subtitle><span class="mono" x-text="ei.no_invoice"></span> — hanya invoice yang belum dibayar</x-slot:subtitle>
+        <x-slot:subtitle><span class="mono" x-text="ei.no_invoice"></span>: hanya invoice yang belum dibayar</x-slot:subtitle>
 
         <div class="space-y-4">
             <div class="card p-3 bg-amber-50 border-amber-200 text-[12px] text-amber-900">

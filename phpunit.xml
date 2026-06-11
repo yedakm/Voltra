@@ -23,8 +23,13 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <!--
+        | Test memakai MySQL dev yang sama (dua schema: voltra + voltra_akuntansi)
+        | karena fitur bergantung pada cross-schema FK yang tidak ada di SQLite.
+        | Semua test DB WAJIB memakai trait DatabaseTransactions dengan
+        | $connectionsToTransact = ['voltra','voltra_akuntansi'] agar data uji
+        | otomatis di-rollback dan tidak mengotori data dev.
+        -->
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

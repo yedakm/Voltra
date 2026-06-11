@@ -184,7 +184,7 @@
 @elseif ($kind === 'tenant')
     {{-- ===== Perusahaan (Tenant) ===== --}}
     <x-section-header title="Perusahaan"
-        subtitle="Daftar perusahaan pengguna Voltra — aktif / tidak aktif menentukan akses login">
+        subtitle="Daftar perusahaan pengguna Voltra. Status aktif menentukan akses login.">
         <x-slot:actions>
             <button class="btn btn-primary"
                 @click="$store.toasts.push('Pendaftaran perusahaan baru dikelola oleh Super Admin.','info')">
@@ -203,6 +203,7 @@
                 <tr class="bg-ink-50 border-b border-ink-200 text-ink-500 text-[11px] uppercase tracking-wider">
                     <th class="px-3 py-2.5 text-left font-semibold">Perusahaan</th>
                     <th class="px-3 py-2.5 text-left font-semibold">NPWP</th>
+                    <th class="px-3 py-2.5 text-left font-semibold">Kode Undangan</th>
                     <th class="px-3 py-2.5 text-left font-semibold">Telepon</th>
                     <th class="px-3 py-2.5 text-left font-semibold">Alamat</th>
                     <th class="px-3 py-2.5 text-left font-semibold">Tgl. Bergabung</th>
@@ -222,6 +223,13 @@
                             </div>
                         </td>
                         <td class="px-3 py-2.5 mono text-[12px]">{{ $r['npwp'] }}</td>
+                        <td class="px-3 py-2.5">
+                            <button class="mono text-[12px] bg-brand-50 text-brand-700 border border-brand-200 rounded px-2 py-0.5 tracking-widest"
+                                title="Klik untuk salin, lalu bagikan ke karyawan agar bisa mendaftar ke perusahaan ini"
+                                @click="navigator.clipboard.writeText('{{ $r['kode_undangan'] ?? '' }}'); $store.toasts.push('Kode undangan disalin.','info')">
+                                {{ $r['kode_undangan'] ?? '—' }}
+                            </button>
+                        </td>
                         <td class="px-3 py-2.5 mono">{{ $r['no_telepon'] }}</td>
                         <td class="px-3 py-2.5"><span class="text-[12px] text-ink-600">{{ $r['alamat'] }}</span></td>
                         <td class="px-3 py-2.5">{{ fmtDate($r['tgl_bergabung']) }}</td>

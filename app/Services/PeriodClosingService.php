@@ -38,11 +38,31 @@ class PeriodClosingService
         ];
     }
 
+    /**
+     * Buka kembali periode yang sudah ditutup (mis. untuk koreksi catatan).
+     * Hanya untuk akuntan/owner — penjurnalan di periode ini aktif lagi
+     * sampai periode ditutup ulang.
+     */
+    public function reopen(PeriodeAkuntansi $periode): PeriodeAkuntansi
+    {
+        if ($periode->status !== 'ditutup') {
+            throw new RuntimeException('Periode ini belum ditutup, tidak ada yang perlu dibuka.');
+        }
+
+        $periode->update([
+            'status' => 'aktif',
+            'tgl_tutup_buku' => null,
+            'ditutup_oleh' => null,
+        ]);
+
+        return $periode->refresh();
+    }
+
     /** Kunci periode bila lolos validasi. */
     public function close(PeriodeAkuntansi $periode, int $ditutupOleh): PeriodeAkuntansi
     {
         if (! $this->validate($periode)['valid']) {
-            throw new RuntimeException('Validasi tutup buku gagal — periode belum lengkap.');
+            throw new RuntimeException('Validasi tutup buku gagal. Periode belum lengkap.');
         }
 
         $periode->update([
