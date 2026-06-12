@@ -15,11 +15,30 @@ use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
- * API akuntansi — depresiasi otomatis, tutup buku, & laporan keuangan.
+ * Controller untuk fitur akuntansi: depresiasi, jurnal, tutup buku, dan laporan.
  */
 class AccountingApiController extends Controller
 {
-    /** POST /api/depreciation/run — jalankan depresiasi Garis Lurus. */
+
+    /**
+     * Ambil baris jurnal yang benar-benar terisi.
+     * Baris tanpa kode akun atau tanpa nominal dianggap kosong dan dibuang.
+     */
+    private function ambilBarisTerisi(array $semuaBaris)
+    {
+        $terisi = [];
+        foreach ($semuaBaris as $baris) {
+            $adaAkun = ! empty($baris['kode_akun']);
+            $adaNominal = (float) ($baris['debit'] ?? 0) > 0 || (float) ($baris['kredit'] ?? 0) > 0;
+            if ($adaAkun && $adaNominal) {
+                $terisi[] = $baris;
+            }
+        }
+
+        return $terisi;
+    }
+
+    /** Jalankan perhitungan depresiasi Garis Lurus untuk satu periode. */
     public function runDepreciation(Request $request, DepreciationService $service)
     {
         $periode = $request->input('periode', date('Y-m'));
@@ -31,7 +50,7 @@ class AccountingApiController extends Controller
     }
 
     /**
-     * POST /api/journal/manual — jurnal manual (mis. setoran kas/modal).
+     * Simpan jurnal manual, misalnya setoran modal awal.
      * Contoh memasukkan uang kas: baris 1 Debit 1-1001 (Kas), baris 2 Kredit 3-1001 (Modal).
      */
     public function storeManualJournal(Request $request, JournalService $journal)
@@ -46,10 +65,7 @@ class AccountingApiController extends Controller
         ]);
 
         // Buang baris kosong (tanpa akun atau tanpa nominal).
-        $lines = collect($data['lines'])
-            ->filter(fn ($l) => ! empty($l['kode_akun'])
-                && ((float) ($l['debit'] ?? 0) > 0 || (float) ($l['kredit'] ?? 0) > 0))
-            ->values()->all();
+        $lines = $this->ambilBarisTerisi($data['lines']);
 
         if (count($lines) < 2) {
             return response()->json(['message' => 'Minimal 2 baris akun terisi.'], 422);
@@ -57,12 +73,14 @@ class AccountingApiController extends Controller
 
         try {
             $jurnal = $journal->post(
-                idPerusahaan: $request->user()->id_perusahaan,
-                jenisJurnal: 'manual',
-                tanggal: $data['tanggal'],
-                lines: $lines,
-                keterangan: $data['keterangan'] ?? 'Jurnal manual',
-                dibuatOleh: $request->user()->id_pengguna,
+                $request->user()->id_perusahaan,
+                'manual',
+                $data['tanggal'],
+                $lines,
+                $data['keterangan'] ?? 'Jurnal manual',
+                null,
+                null,
+                $request->user()->id_pengguna,
             );
         } catch (RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -72,7 +90,7 @@ class AccountingApiController extends Controller
     }
 
     /**
-     * POST /api/journal/{id}/update — edit baris jurnal yang sudah ada.
+     * Edit baris jurnal yang sudah ada.
      * Hanya diizinkan bila periode jurnal masih aktif; bila sudah ditutup,
      * perubahan harus lewat jurnal koreksi.
      */
@@ -98,10 +116,7 @@ class AccountingApiController extends Controller
         ]);
 
         // Buang baris kosong (tanpa akun atau tanpa nominal).
-        $lines = collect($data['lines'])
-            ->filter(fn ($l) => ! empty($l['kode_akun'])
-                && ((float) ($l['debit'] ?? 0) > 0 || (float) ($l['kredit'] ?? 0) > 0))
-            ->values()->all();
+        $lines = $this->ambilBarisTerisi($data['lines']);
 
         if (count($lines) < 2) {
             return response()->json(['message' => 'Minimal 2 baris akun terisi.'], 422);
@@ -120,11 +135,9 @@ class AccountingApiController extends Controller
     }
 
     /**
-     * POST /aksi/journal/koreksi — buat jurnal koreksi atas jurnal lain.
+     * Buat jurnal koreksi atas jurnal lain.
      * Jurnal koreksi = jurnal biasa (jenis 'koreksi') yang mereferensi jurnal
-     * asal (referensi_tipe='jurnal'). Diposting di periode aktif — JournalService
-     * menolak bila periode tanggal koreksi sudah ditutup. Jurnal asal TIDAK diubah,
-     * sehingga jejak audit terjaga.
+     * asal lewat kolom referensi. Jurnal asal tidak diubah supaya jejak audit terjaga.
      */
     public function storeKoreksi(Request $request, JournalService $journal)
     {
@@ -146,10 +159,7 @@ class AccountingApiController extends Controller
             return response()->json(['message' => 'Jurnal asal tidak ditemukan.'], 404);
         }
 
-        $lines = collect($data['lines'])
-            ->filter(fn ($l) => ! empty($l['kode_akun'])
-                && ((float) ($l['debit'] ?? 0) > 0 || (float) ($l['kredit'] ?? 0) > 0))
-            ->values()->all();
+        $lines = $this->ambilBarisTerisi($data['lines']);
 
         if (count($lines) < 2) {
             return response()->json(['message' => 'Minimal 2 baris akun terisi.'], 422);
@@ -157,14 +167,14 @@ class AccountingApiController extends Controller
 
         try {
             $jurnal = $journal->post(
-                idPerusahaan: $tid,
-                jenisJurnal: 'koreksi',
-                tanggal: $data['tanggal'],
-                lines: $lines,
-                keterangan: ($data['keterangan'] ?? null) ?: ('Koreksi atas ' . $asal->no_bukti),
-                referensiTipe: 'jurnal',
-                referensiId: $asal->id_jurnal,
-                dibuatOleh: $request->user()->id_pengguna,
+                $tid,
+                'koreksi',
+                $data['tanggal'],
+                $lines,
+                ($data['keterangan'] ?? null) ?: ('Koreksi atas ' . $asal->no_bukti),
+                'jurnal',
+                $asal->id_jurnal,
+                $request->user()->id_pengguna,
             );
         } catch (RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -176,16 +186,7 @@ class AccountingApiController extends Controller
         ], 201);
     }
 
-    /** GET /api/period/{id}/validate — cek kelengkapan sebelum tutup buku. */
-    public function validatePeriod(Request $request, PeriodClosingService $service, int $id)
-    {
-        $periode = PeriodeAkuntansi::where('id_perusahaan', $request->user()->id_perusahaan)
-            ->findOrFail($id);
-
-        return response()->json(['periode' => $periode] + $service->validate($periode));
-    }
-
-    /** POST /api/period/{id}/close — kunci periode (RBAC: akuntan/owner). */
+    /** Kunci periode akuntansi. Hanya untuk role akuntan dan owner. */
     public function closePeriod(Request $request, PeriodClosingService $service, int $id)
     {
         $periode = PeriodeAkuntansi::where('id_perusahaan', $request->user()->id_perusahaan)
@@ -200,7 +201,7 @@ class AccountingApiController extends Controller
         return response()->json(['message' => 'Periode ditutup.', 'periode' => $closed]);
     }
 
-    /** POST /api/period/{id}/reopen — buka kembali periode (RBAC: akuntan/owner). */
+    /** Buka kembali periode yang sudah ditutup. Hanya untuk role akuntan dan owner. */
     public function reopenPeriod(Request $request, PeriodClosingService $service, int $id)
     {
         $periode = PeriodeAkuntansi::where('id_perusahaan', $request->user()->id_perusahaan)
@@ -218,7 +219,7 @@ class AccountingApiController extends Controller
         ]);
     }
 
-    /** GET /api/reports/{type} — laba-rugi | neraca | arus-kas. */
+    /** Hasilkan laporan keuangan: laba-rugi, neraca, atau arus-kas. */
     public function report(Request $request, string $type)
     {
         $tid = $request->user()->id_perusahaan;

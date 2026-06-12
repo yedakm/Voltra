@@ -25,7 +25,7 @@
             $g = $gensetById[$dd['id_genset']];
             $unitsBySewa[$s['id_sewa']][] = [
                 'id' => $g['id_genset'],
-                'label' => $g['nomor_seri'] . ' · ' . $merekById[$g['id_merek']]['nama_merek'],
+                'label' => $g['nomor_seri'] . ' · ' . ($merekById[$g['id_merek']]['nama_merek'] ?? '—'),
             ];
         }
     }
@@ -87,7 +87,7 @@
                         <td class="px-3 py-2.5">{{ fmtDateTime($h['tanggal']) }}</td>
                         <td class="px-3 py-2.5 mono text-[12px]">{{ $sewaById[$h['id_sewa']]['no_referensi_kontrak'] ?? '' }}</td>
                         <td class="px-3 py-2.5">
-                            <div class="font-medium text-[12.5px]">{{ $merekById[$g['id_merek']]['nama_merek'] }} {{ $kategoriById[$g['id_kategori']]['kapasitas'] }}</div>
+                            <div class="font-medium text-[12.5px]">{{ ($merekById[$g['id_merek']]['nama_merek'] ?? '—') }} {{ ($kategoriById[$g['id_kategori']]['kapasitas'] ?? '—') }}</div>
                             <div class="mono text-[11px] text-ink-500">{{ $g['nomor_seri'] }}</div>
                         </td>
                         <td class="px-3 py-2.5 text-[12px]">
@@ -123,7 +123,7 @@
                 <x-field label="PIC dari Rental">{{ $h['pic_dari_rental'] }}</x-field>
                 <x-field label="PIC dari Pelanggan">{{ $h['pic_dari_pelanggan'] }}</x-field>
                 <x-field label="Genset">
-                    <div class="font-medium">{{ $merekById[$g['id_merek']]['nama_merek'] }} · {{ $kategoriById[$g['id_kategori']]['kapasitas'] }}</div>
+                    <div class="font-medium">{{ ($merekById[$g['id_merek']]['nama_merek'] ?? '—') }} · {{ ($kategoriById[$g['id_kategori']]['kapasitas'] ?? '—') }}</div>
                     <div class="mono text-[11px] text-ink-500">{{ $g['nomor_seri'] }}</div>
                 </x-field>
                 <x-field label="Dicatat oleh">{{ $penggunaById[$h['dicatat_oleh']]['nama'] ?? '' }}</x-field>

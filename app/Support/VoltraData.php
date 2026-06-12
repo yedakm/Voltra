@@ -3,15 +3,13 @@
 namespace App\Support;
 
 /**
- * Voltra ERP — frontend mock data.
- *
- * Ported 1:1 from the Claude Design prototype (src/data.jsx). Field names follow
- * the PRD schema exactly so each array maps directly onto an Eloquent model when
- * the real database integration is wired in later.
+ * Kumpulan data contoh (seeder) dan penyedia data untuk halaman-halaman aplikasi.
+ * Nama field mengikuti kolom database sehingga tiap array bisa langsung
+ * dipakai oleh model Eloquent maupun view Blade.
  */
 class VoltraData
 {
-    /** @var array<string,mixed>|null Memoized full dataset. */
+    /** Cache dataset agar query tidak diulang dalam satu request. */
     protected static ?array $cache = null;
 
     /* =========================================================
@@ -41,11 +39,11 @@ class VoltraData
     public static function merek(): array
     {
         return [
-            ['id_merek' => 1, 'nama_merek' => 'Cummins', 'negara_asal' => 'USA', 'keterangan' => 'Heavy-duty diesel genset'],
-            ['id_merek' => 2, 'nama_merek' => 'Perkins', 'negara_asal' => 'UK', 'keterangan' => 'Industrial & rental grade'],
-            ['id_merek' => 3, 'nama_merek' => 'Caterpillar', 'negara_asal' => 'USA', 'keterangan' => 'High capacity diesel'],
-            ['id_merek' => 4, 'nama_merek' => 'Mitsubishi', 'negara_asal' => 'Japan', 'keterangan' => 'Compact unit'],
-            ['id_merek' => 5, 'nama_merek' => 'Volvo Penta', 'negara_asal' => 'Sweden', 'keterangan' => 'Marine & industrial'],
+            ['id_merek' => 1, 'id_perusahaan' => 1, 'nama_merek' => 'Cummins', 'negara_asal' => 'USA', 'keterangan' => 'Heavy-duty diesel genset'],
+            ['id_merek' => 2, 'id_perusahaan' => 1, 'nama_merek' => 'Perkins', 'negara_asal' => 'UK', 'keterangan' => 'Industrial & rental grade'],
+            ['id_merek' => 3, 'id_perusahaan' => 1, 'nama_merek' => 'Caterpillar', 'negara_asal' => 'USA', 'keterangan' => 'High capacity diesel'],
+            ['id_merek' => 4, 'id_perusahaan' => 1, 'nama_merek' => 'Mitsubishi', 'negara_asal' => 'Japan', 'keterangan' => 'Compact unit'],
+            ['id_merek' => 5, 'id_perusahaan' => 1, 'nama_merek' => 'Volvo Penta', 'negara_asal' => 'Sweden', 'keterangan' => 'Marine & industrial'],
         ];
     }
 
@@ -231,11 +229,11 @@ class VoltraData
     public static function jurnalAkuntansi(): array
     {
         return [
-            ['id_jurnal' => 501, 'id_perusahaan' => 1, 'id_periode' => 4, 'no_bukti' => 'JRN-26040-001', 'tanggal' => '2026-04-05', 'jenis_jurnal' => 'sewa', 'referensi_tipe' => 'transaksi_sewa', 'referensi_id' => 1001, 'total_debit' => 83250000, 'total_kredit' => 83250000, 'keterangan' => 'Terbit Invoice INV/2026/04/001 — PT Adhi Konstruksi', 'dibuat_oleh' => 1, 'dibuat_pada' => '2026-04-05 09:14'],
+            ['id_jurnal' => 501, 'id_perusahaan' => 1, 'id_periode' => 4, 'no_bukti' => 'JRN-26040-001', 'tanggal' => '2026-04-05', 'jenis_jurnal' => 'sewa', 'referensi_tipe' => 'transaksi_sewa', 'referensi_id' => 1001, 'total_debit' => 83250000, 'total_kredit' => 83250000, 'keterangan' => 'Terbit Invoice INV/2026/04/001 - PT Adhi Konstruksi', 'dibuat_oleh' => 1, 'dibuat_pada' => '2026-04-05 09:14'],
             ['id_jurnal' => 502, 'id_perusahaan' => 1, 'id_periode' => 4, 'no_bukti' => 'JRN-26040-002', 'tanggal' => '2026-04-12', 'jenis_jurnal' => 'pembayaran', 'referensi_tipe' => 'pembayaran', 'referensi_id' => 1, 'total_debit' => 83250000, 'total_kredit' => 83250000, 'keterangan' => 'Pembayaran INV/2026/04/001', 'dibuat_oleh' => 1, 'dibuat_pada' => '2026-04-12 13:02'],
             ['id_jurnal' => 503, 'id_perusahaan' => 1, 'id_periode' => 4, 'no_bukti' => 'JRN-26040-003', 'tanggal' => '2026-04-02', 'jenis_jurnal' => 'pemeliharaan', 'referensi_tipe' => 'pemeliharaan', 'referensi_id' => 2, 'total_debit' => 1675000, 'total_kredit' => 1675000, 'keterangan' => 'Beban servis rutin Genset CMN-250-0232', 'dibuat_oleh' => 2, 'dibuat_pada' => '2026-04-02 16:30'],
             ['id_jurnal' => 504, 'id_perusahaan' => 1, 'id_periode' => 4, 'no_bukti' => 'JRN-26040-004', 'tanggal' => '2026-04-30', 'jenis_jurnal' => 'penyusutan', 'referensi_tipe' => 'scheduler', 'referensi_id' => null, 'total_debit' => 32450000, 'total_kredit' => 32450000, 'keterangan' => 'Depresiasi bulanan April 2026 (8 unit)', 'dibuat_oleh' => 0, 'dibuat_pada' => '2026-04-30 23:59'],
-            ['id_jurnal' => 505, 'id_perusahaan' => 1, 'id_periode' => 4, 'no_bukti' => 'JRN-26040-005', 'tanggal' => '2026-04-08', 'jenis_jurnal' => 'sewa', 'referensi_tipe' => 'transaksi_sewa', 'referensi_id' => 1002, 'total_debit' => 209235000, 'total_kredit' => 209235000, 'keterangan' => 'Terbit Invoice INV/2026/04/002 — PT Borneo Mining', 'dibuat_oleh' => 1, 'dibuat_pada' => '2026-04-08 10:00'],
+            ['id_jurnal' => 505, 'id_perusahaan' => 1, 'id_periode' => 4, 'no_bukti' => 'JRN-26040-005', 'tanggal' => '2026-04-08', 'jenis_jurnal' => 'sewa', 'referensi_tipe' => 'transaksi_sewa', 'referensi_id' => 1002, 'total_debit' => 209235000, 'total_kredit' => 209235000, 'keterangan' => 'Terbit Invoice INV/2026/04/002 - PT Borneo Mining', 'dibuat_oleh' => 1, 'dibuat_pada' => '2026-04-08 10:00'],
             ['id_jurnal' => 506, 'id_perusahaan' => 1, 'id_periode' => 4, 'no_bukti' => 'JRN-26040-006', 'tanggal' => '2026-04-22', 'jenis_jurnal' => 'beban_operasional', 'referensi_tipe' => 'transaksi_sewa', 'referensi_id' => 1002, 'total_debit' => 4200000, 'total_kredit' => 4200000, 'keterangan' => 'Tambahan BBM site Tenggarong', 'dibuat_oleh' => 1, 'dibuat_pada' => '2026-04-22 14:20'],
         ];
     }
@@ -266,7 +264,7 @@ class VoltraData
      | Derived datasets
      |=========================================================*/
 
-    /** Materialized availability calendar — derived from detail_sewa & pemeliharaan. */
+    /** Materialized availability calendar - derived from detail_sewa & pemeliharaan. */
     public static function jadwalKetersediaan(): array
     {
         $arr = [];
@@ -304,7 +302,7 @@ class VoltraData
         return $arr;
     }
 
-    /** Depreciation schedule — one row per genset for the current month (with snapshots). */
+    /** Depreciation schedule - one row per genset for the current month (with snapshots). */
     public static function jadwalPenyusutan(): array
     {
         $rows = [];
@@ -400,7 +398,7 @@ class VoltraData
     }
 
     /**
-     * Full dataset untuk satu tenant — dibaca LANGSUNG dari database
+     * Full dataset untuk satu tenant - dibaca LANGSUNG dari database
      * (kedua schema), lalu dibentuk ulang ke struktur array yang sama
      * seperti versi mock, sehingga seluruh view Blade tidak perlu diubah.
      *
@@ -479,7 +477,7 @@ class VoltraData
             'detail_jurnal' => $detailJurnal,
             'jadwal_ketersediaan' => $jadwalKetersediaan,
             'jadwal_penyusutan' => $jadwalPenyusutan,
-            // lookups — entri kunci '' adalah fallback untuk FK nullable
+            // lookups - entri kunci '' adalah fallback untuk FK nullable
             // (genset boleh tanpa merek/kategori/supplier; view tidak boleh crash)
             'kategoriById' => self::indexBy($kategori, 'id_kategori')
                 + ['' => ['id_kategori' => null, 'kapasitas' => '—', 'umur_ekonomis_default' => 0, 'estimasi_nilai_residu' => 0]],

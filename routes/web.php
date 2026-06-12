@@ -8,8 +8,8 @@ use App\Http\Controllers\PageController;
 use Illuminate\Support\Facades\Route;
 
 /*
-| Voltra ERP — web routes.
-| Halaman dilindungi `auth`; modul keuangan dibatasi RBAC (role middleware).
+| Rute web Voltra.
+| Semua halaman dilindungi login; modul keuangan dibatasi per role.
 */
 
 // ---- Autentikasi ----
@@ -29,20 +29,20 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 Route::middleware('auth')->group(function () {
     Route::get('/', fn () => redirect()->route('dashboard'));
 
-    // Operasional & Aset — semua role login
+    // Operasional & Aset - semua role login
     foreach (['dashboard', 'rental', 'calendar', 'handover', 'maintenance', 'parts',
         'assets', 'disposal', 'invoices', 'customers', 'suppliers', 'brands'] as $page) {
         Route::get('/' . $page, PageController::class)->name($page);
     }
 
-    // Keuangan — RBAC: hanya owner / akuntan / admin
+    // Keuangan - RBAC: hanya owner / akuntan / admin
     Route::middleware('role:owner,akuntan,admin')->group(function () {
         foreach (['opex', 'accounting', 'period', 'reports'] as $page) {
             Route::get('/' . $page, PageController::class)->name($page);
         }
     });
 
-    // Master pengguna & tenant — owner / admin
+    // Master pengguna & tenant - owner / admin
     Route::middleware('role:owner,admin')->group(function () {
         foreach (['users', 'tenant'] as $page) {
             Route::get('/' . $page, PageController::class)->name($page);
@@ -50,9 +50,7 @@ Route::middleware('auth')->group(function () {
     });
 
     /*
-    | Aksi tulis dari frontend (drawer/form) — memakai sesi login + CSRF.
-    | Controller-nya sama persis dengan REST API /api/* (token Sanctum),
-    | sehingga logika bisnis & auto-jurnal tidak terduplikasi.
+    | Aksi simpan dari form di halaman (memakai sesi login + CSRF).
     */
     Route::prefix('aksi')->group(function () {
         Route::post('/rental', [TransactionApiController::class, 'storeRental']);

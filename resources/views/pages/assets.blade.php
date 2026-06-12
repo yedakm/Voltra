@@ -94,14 +94,14 @@
                 @foreach ($genset as $g)
                     @php
                         $info = VoltraData::depresiasiInfo($g);
-                        $searchText = strtolower($g['nomor_seri'] . ' ' . $merekById[$g['id_merek']]['nama_merek']);
+                        $searchText = strtolower($g['nomor_seri'] . ' ' . ($merekById[$g['id_merek']]['nama_merek'] ?? '—'));
                     @endphp
                     <tr class="border-b border-ink-100 hoverable cursor-pointer"
                         x-show="(tab==='all' || tab==='{{ $g['status'] }}') && (search==='' || @js($searchText).includes(search.toLowerCase()))"
                         @click="open = {{ $g['id_genset'] }}">
                         <td class="px-3 py-2.5 mono text-[12px]">{{ $g['nomor_seri'] }}</td>
                         <td class="px-3 py-2.5">
-                            <div class="font-medium text-ink-800">{{ $merekById[$g['id_merek']]['nama_merek'] }} · {{ $kategoriById[$g['id_kategori']]['kapasitas'] }}</div>
+                            <div class="font-medium text-ink-800">{{ ($merekById[$g['id_merek']]['nama_merek'] ?? '—') }} · {{ ($kategoriById[$g['id_kategori']]['kapasitas'] ?? '—') }}</div>
                             <div class="text-[11px] text-ink-500">{{ $supplierById[$g['id_supplier']]['nama_supplier'] }}</div>
                         </td>
                         <td class="px-3 py-2.5">{{ fmtDate($g['tgl_perolehan']) }}</td>
@@ -118,9 +118,9 @@
     {{-- ===== Asset detail drawers ===== --}}
     @foreach ($genset as $g)
         @php
-            $k = $kategoriById[$g['id_kategori']];
+            $k = $kategoriById[$g['id_kategori']] ?? $kategoriById[''];
             $sup = $supplierById[$g['id_supplier']];
-            $mer = $merekById[$g['id_merek']];
+            $mer = $merekById[$g['id_merek']] ?? $merekById[''];
             $info = VoltraData::depresiasiInfo($g);
             $servis = collect($d['pemeliharaan'])->where('id_genset', $g['id_genset']);
             $sewas = collect($d['detail_sewa'])->where('id_genset', $g['id_genset']);

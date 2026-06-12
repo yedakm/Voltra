@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * detail_pemeliharaan — composite primary key (id_pemeliharaan, id_part).
+ * detail_pemeliharaan - composite primary key (id_pemeliharaan, id_part).
  */
 class DetailPemeliharaan extends Model
 {

@@ -7,6 +7,7 @@
     $akun = collect($d['akun_perkiraan']);
     $akunByKode = $d['akunByKode'];
     $periodeById = $d['periodeById'];
+    $jurnalById = $d['jurnalById'];
     $gensetById = $d['gensetById'];
     $merekById = $d['merekById'];
     $kategoriById = $d['kategoriById'];
@@ -158,7 +159,7 @@
             @foreach ($jurnal as $j)
                 @php
                     $lines = $detailJurnal->where('id_jurnal', $j['id_jurnal']);
-                    $periode = $periodeById[$j['id_periode']];
+                    $periode = $periodeById[$j['id_periode']] ?? null;
                     $jl = $jenisLabels[$j['jenis_jurnal']] ?? [$j['jenis_jurnal'], 'gray'];
                     $periodeAktifJurnal = ($periode['status'] ?? '') === 'aktif';
                     $jForEdit = [
@@ -552,18 +553,19 @@
                 </thead>
                 <tbody>
                     @foreach ($d['jadwal_penyusutan'] as $r)
-                        @php $g = $gensetById[$r['id_genset']]; @endphp
+                        @php $g = $gensetById[$r['id_genset']] ?? null; @endphp
+                        @continue(! $g)
                         <tr class="border-b border-ink-100 hoverable">
                             <td class="px-3 py-2.5 mono text-[12px]">{{ $r['periode_bulan'] }}</td>
                             <td class="px-3 py-2.5">
-                                <div class="font-medium">{{ $merekById[$g['id_merek']]['nama_merek'] }} {{ $kategoriById[$g['id_kategori']]['kapasitas'] }}</div>
+                                <div class="font-medium">{{ ($merekById[$g['id_merek']]['nama_merek'] ?? '—') }} {{ ($kategoriById[$g['id_kategori']]['kapasitas'] ?? '—') }}</div>
                                 <div class="mono text-[11px] text-ink-500">{{ $g['nomor_seri'] }}</div>
                             </td>
                             <td class="px-3 py-2.5 text-right"><span class="mono text-[11.5px] text-ink-500">{{ fmtIDR($r['harga_perolehan']) }}</span></td>
                             <td class="px-3 py-2.5 text-right"><span class="mono font-medium">{{ fmtIDR($r['beban_penyusutan']) }}</span></td>
                             <td class="px-3 py-2.5 text-right"><span class="mono text-red-700">{{ fmtIDR($r['akumulasi_penyusutan']) }}</span></td>
                             <td class="px-3 py-2.5 text-right"><span class="mono text-brand-700 font-medium">{{ fmtIDR($r['nilai_buku']) }}</span></td>
-                            <td class="px-3 py-2.5 mono text-[12px]">JRN-26040-{{ str_pad($r['id_jurnal'] - 499, 3, '0', STR_PAD_LEFT) }}</td>
+                            <td class="px-3 py-2.5 mono text-[12px]">{{ $jurnalById[$r['id_jurnal']]['no_bukti'] ?? '—' }}</td>
                             <td class="px-3 py-2.5"><x-status-pill :status="$r['status_jurnal']" /></td>
                         </tr>
                     @endforeach

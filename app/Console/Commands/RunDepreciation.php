@@ -7,8 +7,8 @@ use App\Services\DepreciationService;
 use Illuminate\Console\Command;
 
 /**
- * Job otomatis depresiasi akhir bulan (alur 5 PRD).
- * Dijadwalkan via Laravel Scheduler — lihat routes/console.php.
+ * Perintah artisan untuk menjalankan depresiasi akhir bulan.
+ * Dijadwalkan otomatis lewat Laravel Scheduler (lihat routes/console.php).
  */
 class RunDepreciation extends Command
 {
@@ -32,8 +32,8 @@ class RunDepreciation extends Command
         foreach ($tenants as $pid) {
             $r = $service->runForPeriod($pid, $tahun, $bulan);
             $this->line($r['skipped']
-                ? "  · Perusahaan #$pid — sudah dihitung, dilewati."
-                : sprintf('  · Perusahaan #%d — %d unit, beban Rp %s, jurnal #%s',
+                ? "  - Perusahaan #$pid - sudah dihitung, dilewati."
+                : sprintf('  - Perusahaan #%d - %d unit, beban Rp %s, jurnal #%s',
                     $pid, $r['unit'], number_format($r['total_beban'], 0, ',', '.'), $r['id_jurnal'] ?? '-'));
         }
 

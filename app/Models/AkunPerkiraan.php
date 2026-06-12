@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * akun_perkiraan — schema akuntansi, composite PK (kode_akun, id_perusahaan).
+ * akun_perkiraan - schema akuntansi, composite PK (kode_akun, id_perusahaan).
  */
 class AkunPerkiraan extends Model
 {

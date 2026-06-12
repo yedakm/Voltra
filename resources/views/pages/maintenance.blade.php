@@ -162,14 +162,14 @@
                 <tbody>
                     @foreach ($pemeliharaan as $r)
                         @php
-                            $g = $gensetById[$r['id_genset']];
+                            $g = $gensetById[$r['id_genset']] ?? $gensetById[array_key_first($gensetById)] ?? [];
                             $parts = $detailPem->where('id_pemeliharaan', $r['id_pemeliharaan']);
                             $partsCost = $parts->sum('subtotal_harga_part');
                         @endphp
                         <tr class="border-b border-ink-100 hoverable cursor-pointer" @click="open = {{ $r['id_pemeliharaan'] }}">
                             <td class="px-3 py-2.5 mono text-[12px]">WO-{{ str_pad($r['id_pemeliharaan'], 4, '0', STR_PAD_LEFT) }}</td>
                             <td class="px-3 py-2.5">
-                                <div class="font-medium text-[12.5px]">{{ $merekById[$g['id_merek']]['nama_merek'] }} {{ $kategoriById[$g['id_kategori']]['kapasitas'] }}</div>
+                                <div class="font-medium text-[12.5px]">{{ ($merekById[$g['id_merek']]['nama_merek'] ?? '—') }} {{ ($kategoriById[$g['id_kategori']]['kapasitas'] ?? '—') }}</div>
                                 <div class="mono text-[11px] text-ink-500">{{ $g['nomor_seri'] }}</div>
                             </td>
                             <td class="px-3 py-2.5"><x-status-pill :status="$r['jenis_servis']" /></td>
@@ -187,7 +187,7 @@
         {{-- Work order drawers --}}
         @foreach ($pemeliharaan as $r)
             @php
-                $g = $gensetById[$r['id_genset']];
+                $g = $gensetById[$r['id_genset']] ?? $gensetById[array_key_first($gensetById)] ?? [];
                 $parts = $detailPem->where('id_pemeliharaan', $r['id_pemeliharaan']);
                 $partsCost = $parts->sum('subtotal_harga_part');
                 $totalCost = $partsCost + $r['biaya_jasa_eksternal'];
@@ -204,7 +204,7 @@
             @endphp
             <x-drawer show="open === {{ $r['id_pemeliharaan'] }}" close="open = null; editing = null" :width="640"
                 :title="'WO-'.str_pad($r['id_pemeliharaan'], 4, '0', STR_PAD_LEFT).' · '.lbl($r['jenis_servis'])"
-                :subtitle="$merekById[$g['id_merek']]['nama_merek'].' · '.$g['nomor_seri']">
+                :subtitle="($merekById[$g['id_merek']]['nama_merek'] ?? '—').' · '.$g['nomor_seri']">
 
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">

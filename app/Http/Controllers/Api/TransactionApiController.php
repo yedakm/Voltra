@@ -21,7 +21,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * API transaksi operasional yang memicu penjurnalan otomatis.
+ * Controller transaksi operasional. Setiap transaksi keuangan di sini
+ * otomatis membentuk jurnal lewat JournalService.
  */
 class TransactionApiController extends Controller
 {
@@ -44,7 +45,7 @@ class TransactionApiController extends Controller
         ], 422);
     }
 
-    /** POST /api/rental — buat sewa + invoice + jurnal Pendapatan/Piutang. */
+    /** Simpan kontrak sewa baru beserta invoice dan jurnalnya. */
     public function storeRental(Request $request)
     {
         $data = $request->validate([
@@ -70,8 +71,7 @@ class TransactionApiController extends Controller
             return $this->responsPeriodeDitutup(now()->toDateString());
         }
 
-        // Validasi tiap unit: milik tenant ini & tidak bentrok jadwal (Bab 4.2.2 TA —
-        // sistem menolak tumpang tindih sebelum kontrak dibuat).
+        // Pastikan tiap unit milik perusahaan ini dan jadwalnya tidak bentrok.
         foreach ($data['items'] as $it) {
             $genset = Genset::where('id_perusahaan', $tid)->find($it['id_genset']);
             if (! $genset) {
@@ -173,21 +173,21 @@ class TransactionApiController extends Controller
         }
 
         $jurnal = $this->journal->post(
-            idPerusahaan: $tid,
-            jenisJurnal: 'sewa',
-            tanggal: now()->toDateString(),
-            lines: $lines,
-            keterangan: 'Terbit Invoice ' . $sewa->no_invoice,
-            referensiTipe: 'transaksi_sewa',
-            referensiId: $sewa->id_sewa,
-            dibuatOleh: $user->id_pengguna,
+            $tid,
+            'sewa',
+            now()->toDateString(),
+            $lines,
+            'Terbit Invoice ' . $sewa->no_invoice,
+            'transaksi_sewa',
+            $sewa->id_sewa,
+            $user->id_pengguna,
         );
 
         return response()->json(['sewa' => $sewa, 'jurnal' => $jurnal->load('detail')], 201);
     }
 
     /**
-     * POST /aksi/rental/{id}/update — edit invoice/sewa & regenerasi jurnalnya.
+     * Edit invoice/sewa dan tulis ulang jurnalnya.
      * Hanya boleh bila belum ada pembayaran (status belum_bayar) dan periode
      * jurnal masih aktif. Mengubah satuan/PPN/PPh menghitung ulang tagihan,
      * pajak & PPh, lalu menulis ulang baris jurnal sewa agar tetap konsisten.
@@ -283,7 +283,7 @@ class TransactionApiController extends Controller
         ]);
     }
 
-    /** POST /api/payment — catat pembayaran + jurnal Kas/Piutang. */
+    /** Catat pembayaran invoice beserta jurnal kasnya. */
     public function storePayment(Request $request)
     {
         $data = $request->validate([
@@ -322,7 +322,7 @@ class TransactionApiController extends Controller
             'metode_bayar' => $data['metode_bayar'],
         ]);
 
-        // perbarui status pembayaran — total kas = tagihan + PPN - PPh (Piutang sudah net PPh)
+        // perbarui status pembayaran - total kas = tagihan + PPN - PPh (Piutang sudah net PPh)
         $total = (float) $sewa->total_tagihan + (float) $sewa->pajak - (float) ($sewa->pph ?? 0);
         $dibayar = (float) Pembayaran::where('id_sewa', $sewa->id_sewa)->sum('nominal_bayar');
         $sewa->update([
@@ -330,23 +330,23 @@ class TransactionApiController extends Controller
         ]);
 
         $jurnal = $this->journal->post(
-            idPerusahaan: $user->id_perusahaan,
-            jenisJurnal: 'pembayaran',
-            tanggal: $tglBayar,
-            lines: [
+            $user->id_perusahaan,
+            'pembayaran',
+            $tglBayar,
+            [
                 ['kode_akun' => '1-1001', 'debit' => $data['nominal_bayar'], 'keterangan' => 'Penerimaan ' . $bayar->no_kuitansi],
                 ['kode_akun' => '1-1101', 'kredit' => $data['nominal_bayar'], 'keterangan' => 'Pelunasan piutang'],
             ],
-            keterangan: 'Pembayaran ' . $sewa->no_invoice,
-            referensiTipe: 'pembayaran',
-            referensiId: $bayar->id_pembayaran,
-            dibuatOleh: $user->id_pengguna,
+            'Pembayaran ' . $sewa->no_invoice,
+            'pembayaran',
+            $bayar->id_pembayaran,
+            $user->id_pengguna,
         );
 
         return response()->json(['pembayaran' => $bayar, 'sewa' => $sewa->refresh(), 'jurnal' => $jurnal], 201);
     }
 
-    /** POST /api/asset-purchase — beli genset + jurnal Pembelian Aset Tetap. */
+    /** Catat pembelian genset baru beserta jurnal aset tetapnya. */
     public function storeAssetPurchase(Request $request)
     {
         $data = $request->validate([
@@ -383,23 +383,23 @@ class TransactionApiController extends Controller
 
         $akunKredit = ($data['metode_bayar'] ?? 'kas') === 'utang' ? '2-1001' : '1-1001';
         $jurnal = $this->journal->post(
-            idPerusahaan: $user->id_perusahaan,
-            jenisJurnal: 'pembelian_aset',
-            tanggal: $data['tgl_perolehan'],
-            lines: [
+            $user->id_perusahaan,
+            'pembelian_aset',
+            $data['tgl_perolehan'],
+            [
                 ['kode_akun' => '1-2001', 'debit' => $data['harga_perolehan'], 'keterangan' => 'Genset ' . $genset->nomor_seri],
                 ['kode_akun' => $akunKredit, 'kredit' => $data['harga_perolehan'], 'keterangan' => 'Pembayaran pembelian aset'],
             ],
-            keterangan: 'Pembelian genset ' . $genset->nomor_seri,
-            referensiTipe: 'genset',
-            referensiId: $genset->id_genset,
-            dibuatOleh: $user->id_pengguna,
+            'Pembelian genset ' . $genset->nomor_seri,
+            'genset',
+            $genset->id_genset,
+            $user->id_pengguna,
         );
 
         return response()->json(['genset' => $genset, 'jurnal' => $jurnal->load('detail')], 201);
     }
 
-    /** POST /api/asset-disposal — pelepasan aset + jurnal Laba/Rugi. */
+    /** Catat penjualan/pelepasan genset beserta jurnal laba ruginya. */
     public function storeDisposal(Request $request)
     {
         $data = $request->validate([
@@ -446,20 +446,20 @@ class TransactionApiController extends Controller
         }
 
         $jurnal = $this->journal->post(
-            idPerusahaan: $user->id_perusahaan,
-            jenisJurnal: 'penjualan_aset',
-            tanggal: $tglJual,
-            lines: $lines,
-            keterangan: 'Pelepasan aset ' . $genset->nomor_seri,
-            referensiTipe: 'penjualan_genset',
-            referensiId: $jual->id_penjualan,
-            dibuatOleh: $user->id_pengguna,
+            $user->id_perusahaan,
+            'penjualan_aset',
+            $tglJual,
+            $lines,
+            'Pelepasan aset ' . $genset->nomor_seri,
+            'penjualan_genset',
+            $jual->id_penjualan,
+            $user->id_pengguna,
         );
 
         return response()->json(['penjualan' => $jual, 'jurnal' => $jurnal->load('detail')], 201);
     }
 
-    /** POST /api/handover — catat serah-terima + update status & lokasi genset. */
+    /** Catat serah-terima unit dan perbarui status serta lokasi genset. */
     public function storeHandover(Request $request)
     {
         $data = $request->validate([
@@ -478,7 +478,7 @@ class TransactionApiController extends Controller
         // Pastikan kontrak sewa yang dirujuk juga milik tenant ini.
         TransaksiSewa::where('id_perusahaan', $user->id_perusahaan)->findOrFail($data['id_sewa']);
 
-        $ho = Pengembalian::create($data + ['dicatat_oleh' => $user->id_pengguna]);
+        $ho = Pengembalian::create(array_merge($data, ['dicatat_oleh' => $user->id_pengguna]));
 
         if ($data['jenis_aktivitas'] === 'pengambilan') {
             $det = DetailSewa::where('id_sewa', $data['id_sewa'])->where('id_genset', $data['id_genset'])->first();
@@ -494,8 +494,8 @@ class TransactionApiController extends Controller
     }
 
     /**
-     * POST /api/genset/{id}/status — ubah status operasional genset.
-     * Transisi yang diperbolehkan: di_gudang ↔ rusak, dan di_proyek → rusak
+     * Ubah status operasional genset (misalnya menandai unit rusak).
+     * Transisi yang diperbolehkan: di_gudang ke rusak (dan sebaliknya), serta di_proyek ke rusak
      * (bila unit rusak di lokasi proyek). Status terjual hanya boleh lewat
      * pelepasan aset; status di_proyek hanya boleh lewat serah-terima.
      */
@@ -545,7 +545,7 @@ class TransactionApiController extends Controller
     }
 
     /**
-     * POST /api/maintenance/{id}/update — edit work order yang masih berjalan.
+     * Edit work order servis yang masih berjalan.
      * Teknisi memakai ini untuk mencatat biaya jasa eksternal mendadak, mengubah
      * keterangan, atau memperbarui jenis servis. Ditolak bila servis sudah selesai.
      */
@@ -572,8 +572,8 @@ class TransactionApiController extends Controller
     }
 
     /**
-     * POST /api/maintenance/{id}/part — tambah pemakaian suku cadang ke WO.
-     * Stok langsung dipotong saat suku cadang ditambahkan (sesuai pemakaian fisik).
+     * Tambah pemakaian suku cadang ke work order.
+     * Stok langsung dipotong saat suku cadang ditambahkan.
      * Jurnal beban tetap dibuat saat servis diselesaikan (completeMaintenance).
      */
     public function addPartToMaintenance(Request $request, int $id)
@@ -630,7 +630,7 @@ class TransactionApiController extends Controller
     }
 
     /**
-     * POST /api/maintenance/{id}/complete — selesaikan servis & buat jurnal beban.
+     * Selesaikan servis dan buat jurnal beban pemeliharaan.
      * Stok sudah dipotong saat suku cadang ditambahkan (addPartToMaintenance),
      * jadi di sini tidak dipotong lagi.
      */
@@ -667,21 +667,21 @@ class TransactionApiController extends Controller
                 $lines[] = ['kode_akun' => '1-1001', 'kredit' => $external, 'keterangan' => 'Pembayaran jasa eksternal'];
             }
             $jurnal = $this->journal->post(
-                idPerusahaan: $user->id_perusahaan,
-                jenisJurnal: 'pemeliharaan',
-                tanggal: now()->toDateString(),
-                lines: $lines,
-                keterangan: 'Beban servis WO-' . str_pad((string) $wo->id_pemeliharaan, 4, '0', STR_PAD_LEFT),
-                referensiTipe: 'pemeliharaan',
-                referensiId: $wo->id_pemeliharaan,
-                dibuatOleh: $user->id_pengguna,
+                $user->id_perusahaan,
+                'pemeliharaan',
+                now()->toDateString(),
+                $lines,
+                'Beban servis WO-' . str_pad((string) $wo->id_pemeliharaan, 4, '0', STR_PAD_LEFT),
+                'pemeliharaan',
+                $wo->id_pemeliharaan,
+                $user->id_pengguna,
             );
         }
 
         return response()->json(['pemeliharaan' => $wo->refresh(), 'jurnal' => $jurnal]);
     }
 
-    /** POST /api/opex — catat beban operasional + jurnal Pengeluaran Kas. */
+    /** Catat beban operasional beserta jurnal pengeluaran kasnya. */
     public function storeOpex(Request $request)
     {
         $user = $request->user();
@@ -702,17 +702,17 @@ class TransactionApiController extends Controller
 
         $idSewa = $data['id_sewa'] ?? null;
         $jurnal = $this->journal->post(
-            idPerusahaan: $user->id_perusahaan,
-            jenisJurnal: 'beban_operasional',
-            tanggal: $data['tanggal'],
-            lines: [
+            $user->id_perusahaan,
+            'beban_operasional',
+            $data['tanggal'],
+            [
                 ['kode_akun' => $data['kode_akun'], 'debit' => $data['nominal'], 'keterangan' => $data['keterangan'] ?? 'Beban operasional'],
                 ['kode_akun' => '1-1001', 'kredit' => $data['nominal'], 'keterangan' => 'Pengeluaran kas'],
             ],
-            keterangan: $data['keterangan'] ?? 'Beban operasional',
-            referensiTipe: $idSewa ? 'transaksi_sewa' : null,
-            referensiId: $idSewa,
-            dibuatOleh: $user->id_pengguna,
+            $data['keterangan'] ?? 'Beban operasional',
+            $idSewa ? 'transaksi_sewa' : null,
+            $idSewa,
+            $user->id_pengguna,
         );
 
         return response()->json(['jurnal' => $jurnal->load('detail')], 201);

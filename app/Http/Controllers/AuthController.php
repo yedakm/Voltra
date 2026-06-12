@@ -14,9 +14,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Autentikasi Voltra — kredensial divalidasi terhadap tabel `pengguna`.
- * Email global dapat terdaftar di beberapa tenant (multi-tenant SaaS); tenant
- * tujuan dipilih PASCA verifikasi password.
+ * Controller autentikasi: login, registrasi, pemilihan perusahaan, dan logout.
  */
 class AuthController extends Controller
 {
@@ -29,23 +27,32 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $matches = Pengguna::where('email', $cred['email'])->get()
-            ->filter(fn ($u) => Hash::check($cred['password'], $u->password));
+        // Satu email bisa terdaftar di beberapa perusahaan,
+        // jadi kumpulkan semua akun yang password-nya cocok.
+        $cocok = [];
+        foreach (Pengguna::where('email', $cred['email'])->get() as $akun) {
+            if (Hash::check($cred['password'], $akun->password)) {
+                $cocok[] = $akun;
+            }
+        }
 
-        if ($matches->isEmpty()) {
+        if (count($cocok) === 0) {
             throw ValidationException::withMessages([
                 'email' => 'Email atau password salah.',
             ]);
         }
 
-        if ($matches->count() === 1) {
-            return $this->completeLogin($request, $matches->first());
+        // Hanya satu akun yang cocok: langsung login.
+        if (count($cocok) === 1) {
+            return $this->completeLogin($request, $cocok[0]);
         }
 
-        $request->session()->put(
-            self::SESSION_TENANT_CANDIDATES,
-            $matches->pluck('id_pengguna')->all()
-        );
+        // Lebih dari satu: minta pengguna memilih perusahaan dulu.
+        $idKandidat = [];
+        foreach ($cocok as $akun) {
+            $idKandidat[] = $akun->id_pengguna;
+        }
+        $request->session()->put(self::SESSION_TENANT_CANDIDATES, $idKandidat);
 
         return redirect()->route('tenant.pick');
     }

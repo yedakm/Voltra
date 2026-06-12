@@ -183,13 +183,13 @@
                             @foreach ($det as $dd)
                                 @php
                                     $g = $gensetById[$dd['id_genset']];
-                                    $k = $kategoriById[$g['id_kategori']];
+                                    $k = $kategoriById[$g['id_kategori']] ?? $kategoriById[''];
                                     $days = max(1, (int) ceil((strtotime($dd['end_date']) - strtotime($dd['start_date'])) / 86400));
                                     $qty = $satuanS === 'bulanan' ? max(1, (int) ceil($days / 30)) : $days;
                                 @endphp
                                 <tr class="border-t border-ink-100">
                                     <td class="px-3 py-2.5">
-                                        <div class="font-medium text-ink-800">{{ $merekById[$g['id_merek']]['nama_merek'] }} · {{ $k['kapasitas'] }}</div>
+                                        <div class="font-medium text-ink-800">{{ ($merekById[$g['id_merek']]['nama_merek'] ?? '—') }} · {{ $k['kapasitas'] }}</div>
                                         <div class="mono text-[11px] text-ink-500">{{ $g['nomor_seri'] }}</div>
                                         <div class="text-[11px] text-ink-400 mt-0.5">📍 {{ $dd['alamat_proyek'] }}</div>
                                     </td>
@@ -315,7 +315,7 @@
                 <div class="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
                     @foreach ($availableGensets as $g)
                         @php
-                            $k = $kategoriById[$g['id_kategori']];
+                            $k = $kategoriById[$g['id_kategori']] ?? $kategoriById[''];
                             $defaultPrice = $k['id_kategori'] === 1 ? 1500000 : ($k['id_kategori'] === 2 ? 2500000 : ($k['id_kategori'] === 3 ? 4800000 : 7500000));
                         @endphp
                         <div @click="form.id_genset = {{ $g['id_genset'] }}; form.harga_sewa_unit = {{ $defaultPrice }}"
@@ -326,7 +326,7 @@
                                 <div class="w-1.5 h-1.5 rounded-full bg-white" x-show="form.id_genset === {{ $g['id_genset'] }}"></div>
                             </div>
                             <div class="flex-1">
-                                <div class="font-medium text-[13px]">{{ $merekById[$g['id_merek']]['nama_merek'] }} {{ $k['kapasitas'] }}</div>
+                                <div class="font-medium text-[13px]">{{ ($merekById[$g['id_merek']]['nama_merek'] ?? '—') }} {{ $k['kapasitas'] }}</div>
                                 <div class="mono text-[11px] text-ink-500">{{ $g['nomor_seri'] }}</div>
                             </div>
                             <x-status-pill status="tersedia" />

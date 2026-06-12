@@ -17,11 +17,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * CRUD master data — dipanggil dari drawer "+ Baru" pada halaman Master Data.
+ * CRUD master data - dipanggil dari drawer "+ Baru" pada halaman Master Data.
  */
 class MasterController extends Controller
 {
-    /** POST /aksi/master/{type} — simpan satu baris master data. */
+    /** POST /aksi/master/{type} - simpan satu baris master data. */
     public function store(Request $request, string $type)
     {
         $tid = $request->user()->id_perusahaan;
@@ -81,7 +81,7 @@ class MasterController extends Controller
         };
     }
 
-    /** POST /aksi/maintenance — buat work order servis baru. */
+    /** POST /aksi/maintenance - buat work order servis baru. */
     public function storeMaintenance(Request $request)
     {
         $data = $request->validate([
@@ -154,7 +154,7 @@ class MasterController extends Controller
         return $this->json($user, 'Pengguna');
     }
 
-    /** POST /aksi/master/{type}/{id} — perbarui satu baris master data (tenant-scoped). */
+    /** POST /aksi/master/{type}/{id} - perbarui satu baris master data (tenant-scoped). */
     public function update(Request $request, string $type, int $id)
     {
         $tid = $request->user()->id_perusahaan;
@@ -217,7 +217,7 @@ class MasterController extends Controller
         return response()->json(['message' => $label . ' diperbarui.', 'data' => $row]);
     }
 
-    /** POST /aksi/master/{type}/{id}/delete — hapus satu baris master data (tenant-scoped). */
+    /** POST /aksi/master/{type}/{id}/delete - hapus satu baris master data (tenant-scoped). */
     public function destroy(Request $request, string $type, int $id)
     {
         $tid = $request->user()->id_perusahaan;

@@ -7,15 +7,13 @@ use App\Models\PeriodeAkuntansi;
 use RuntimeException;
 
 /**
- * Tutup buku periode (alur 9 PRD / Bab 4.2.9 TA).
- * Memvalidasi kelengkapan jurnal sebelum periode dikunci.
+ * Service tutup buku periode akuntansi.
+ * Memeriksa kelengkapan jurnal dulu sebelum periode dikunci.
  */
 class PeriodClosingService
 {
     /**
-     * Validasi kelengkapan periode.
-     *
-     * @return array{checks:array<int,array{ok:bool,label:string}>,valid:bool}
+     * Periksa kelengkapan periode sebelum boleh ditutup.
      */
     public function validate(PeriodeAkuntansi $periode): array
     {
@@ -32,16 +30,23 @@ class PeriodClosingService
             ['ok' => $periode->status === 'aktif', 'label' => 'Periode belum pernah ditutup'],
         ];
 
+        // Periode dianggap lengkap bila semua pemeriksaan di atas lolos.
+        $semuaLolos = true;
+        foreach ($checks as $cek) {
+            if (! $cek['ok']) {
+                $semuaLolos = false;
+            }
+        }
+
         return [
             'checks' => $checks,
-            'valid' => collect($checks)->every(fn ($c) => $c['ok']),
+            'valid' => $semuaLolos,
         ];
     }
 
     /**
      * Buka kembali periode yang sudah ditutup (mis. untuk koreksi catatan).
-     * Hanya untuk akuntan/owner — penjurnalan di periode ini aktif lagi
-     * sampai periode ditutup ulang.
+     * Setelah dibuka, penjurnalan di periode ini aktif lagi sampai ditutup ulang.
      */
     public function reopen(PeriodeAkuntansi $periode): PeriodeAkuntansi
     {
@@ -58,7 +63,7 @@ class PeriodClosingService
         return $periode->refresh();
     }
 
-    /** Kunci periode bila lolos validasi. */
+    /** Kunci periode bila seluruh pemeriksaan lolos. */
     public function close(PeriodeAkuntansi $periode, int $ditutupOleh): PeriodeAkuntansi
     {
         if (! $this->validate($periode)['valid']) {

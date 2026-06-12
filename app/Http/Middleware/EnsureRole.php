@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Role-Based Access Control (Bab 3.4.2 TA).
- * Pemakaian: ->middleware('role:owner,akuntan')
+ * Middleware pembatas akses berdasarkan role pengguna.
+ * Contoh pemakaian di route: ->middleware('role:owner,akuntan')
  */
 class EnsureRole
 {

@@ -9,41 +9,43 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Otomatisasi penjurnalan double-entry (Bab 3.4.1 no.9 TA).
- * Setiap transaksi keuangan diposting ke jurnal_akuntansi + detail_jurnal
- * dengan validasi keseimbangan debit = kredit.
+ * Service untuk mencatat jurnal akuntansi double-entry.
+ * Semua transaksi keuangan disimpan lewat service ini supaya
+ * aturan debit = kredit selalu terjaga di satu tempat.
  */
 class JournalService
 {
     /**
-     * Posting satu jurnal beserta baris detailnya.
-     *
-     * @param  array<int,array{kode_akun:string,debit?:float,kredit?:float,keterangan?:string}>  $lines
+     * Simpan satu jurnal beserta baris debit/kreditnya.
+     * $lines berisi array baris, contoh:
+     * [['kode_akun' => '1-1001', 'debit' => 500000], ['kode_akun' => '4-1001', 'kredit' => 500000]]
      */
-    public function post(
-        int $idPerusahaan,
-        string $jenisJurnal,
-        string $tanggal,
-        array $lines,
-        string $keterangan = '',
-        ?string $referensiTipe = null,
-        ?int $referensiId = null,
-        ?int $dibuatOleh = null,
-    ): JurnalAkuntansi {
-        $totalDebit = round(array_sum(array_map(fn ($l) => (float) ($l['debit'] ?? 0), $lines)), 2);
-        $totalKredit = round(array_sum(array_map(fn ($l) => (float) ($l['kredit'] ?? 0), $lines)), 2);
+    public function post($idPerusahaan, $jenisJurnal, $tanggal, array $lines, $keterangan = '', $referensiTipe = null, $referensiId = null, $dibuatOleh = null)
+    {
+        // Hitung total debit dan kredit dari semua baris.
+        $totalDebit = 0;
+        $totalKredit = 0;
+        foreach ($lines as $baris) {
+            $totalDebit += (float) ($baris['debit'] ?? 0);
+            $totalKredit += (float) ($baris['kredit'] ?? 0);
+        }
+        $totalDebit = round($totalDebit, 2);
+        $totalKredit = round($totalKredit, 2);
 
+        // Aturan dasar akuntansi: total debit harus sama dengan total kredit.
         if ($totalDebit !== $totalKredit) {
-            throw new RuntimeException("Jurnal tidak seimbang: debit $totalDebit ≠ kredit $totalKredit");
+            throw new RuntimeException("Jurnal tidak seimbang: debit $totalDebit tidak sama dengan kredit $totalKredit");
         }
 
+        // Jurnal hanya boleh masuk ke periode yang masih aktif.
         $periode = $this->resolvePeriode($idPerusahaan, $tanggal);
         if ($periode->status === 'ditutup') {
             throw new RuntimeException('Periode akuntansi sudah ditutup. Penjurnalan ditolak.');
         }
 
-        // Transaksi harus di koneksi voltra_akuntansi — DB::transaction tanpa
-        // koneksi memakai default (voltra) dan tidak melindungi tabel jurnal.
+        // Header dan detail disimpan dalam satu transaksi database
+        // pada koneksi voltra_akuntansi, supaya kalau salah satu gagal
+        // semuanya ikut dibatalkan (tidak ada jurnal setengah jadi).
         return DB::connection('voltra_akuntansi')->transaction(function () use (
             $idPerusahaan, $periode, $jenisJurnal, $tanggal, $lines,
             $totalDebit, $totalKredit, $keterangan, $referensiTipe, $referensiId, $dibuatOleh
@@ -63,16 +65,18 @@ class JournalService
                 'dibuat_pada' => now(),
             ]);
 
-            foreach (array_values($lines) as $i => $l) {
+            $urutan = 1;
+            foreach ($lines as $baris) {
                 DetailJurnal::create([
                     'id_jurnal' => $jurnal->id_jurnal,
-                    'kode_akun' => $l['kode_akun'],
+                    'kode_akun' => $baris['kode_akun'],
                     'id_perusahaan' => $idPerusahaan,
-                    'debit' => $l['debit'] ?? 0,
-                    'kredit' => $l['kredit'] ?? 0,
-                    'keterangan' => $l['keterangan'] ?? '',
-                    'urutan' => $i + 1,
+                    'debit' => $baris['debit'] ?? 0,
+                    'kredit' => $baris['kredit'] ?? 0,
+                    'keterangan' => $baris['keterangan'] ?? '',
+                    'urutan' => $urutan,
                 ]);
+                $urutan++;
             }
 
             return $jurnal;
@@ -80,37 +84,43 @@ class JournalService
     }
 
     /**
-     * Ganti seluruh baris detail sebuah jurnal yang sudah ada (untuk fitur edit).
-     * Memvalidasi keseimbangan debit = kredit, lalu menulis ulang detail + total
-     * header. Pengecekan periode ditutup dilakukan di controller.
-     *
-     * @param  array<int,array{kode_akun:string,debit?:float,kredit?:float,keterangan?:string}>  $lines
+     * Tulis ulang baris detail sebuah jurnal yang sudah ada (untuk fitur edit).
+     * Pengecekan periode ditutup dilakukan di controller sebelum memanggil ini.
      */
-    public function replaceLines(JurnalAkuntansi $jurnal, array $lines, ?string $keterangan = null): JurnalAkuntansi
+    public function replaceLines(JurnalAkuntansi $jurnal, array $lines, $keterangan = null)
     {
-        $totalDebit = round(array_sum(array_map(fn ($l) => (float) ($l['debit'] ?? 0), $lines)), 2);
-        $totalKredit = round(array_sum(array_map(fn ($l) => (float) ($l['kredit'] ?? 0), $lines)), 2);
+        $totalDebit = 0;
+        $totalKredit = 0;
+        foreach ($lines as $baris) {
+            $totalDebit += (float) ($baris['debit'] ?? 0);
+            $totalKredit += (float) ($baris['kredit'] ?? 0);
+        }
+        $totalDebit = round($totalDebit, 2);
+        $totalKredit = round($totalKredit, 2);
 
         if ($totalDebit !== $totalKredit) {
-            throw new RuntimeException("Jurnal tidak seimbang: debit $totalDebit ≠ kredit $totalKredit");
+            throw new RuntimeException("Jurnal tidak seimbang: debit $totalDebit tidak sama dengan kredit $totalKredit");
         }
         if ($totalDebit <= 0) {
             throw new RuntimeException('Total jurnal harus lebih dari 0.');
         }
 
         return DB::connection('voltra_akuntansi')->transaction(function () use ($jurnal, $lines, $totalDebit, $totalKredit, $keterangan) {
+            // Hapus baris lama lalu tulis baris baru.
             DetailJurnal::where('id_jurnal', $jurnal->id_jurnal)->delete();
 
-            foreach (array_values($lines) as $i => $l) {
+            $urutan = 1;
+            foreach ($lines as $baris) {
                 DetailJurnal::create([
                     'id_jurnal' => $jurnal->id_jurnal,
-                    'kode_akun' => $l['kode_akun'],
+                    'kode_akun' => $baris['kode_akun'],
                     'id_perusahaan' => $jurnal->id_perusahaan,
-                    'debit' => $l['debit'] ?? 0,
-                    'kredit' => $l['kredit'] ?? 0,
-                    'keterangan' => $l['keterangan'] ?? '',
-                    'urutan' => $i + 1,
+                    'debit' => $baris['debit'] ?? 0,
+                    'kredit' => $baris['kredit'] ?? 0,
+                    'keterangan' => $baris['keterangan'] ?? '',
+                    'urutan' => $urutan,
                 ]);
+                $urutan++;
             }
 
             $jurnal->update([
@@ -123,8 +133,11 @@ class JournalService
         });
     }
 
-    /** Cari periode akuntansi yang memuat tanggal; buat bila belum ada. */
-    public function resolvePeriode(int $idPerusahaan, string $tanggal): PeriodeAkuntansi
+    /**
+     * Cari periode akuntansi yang memuat tanggal tersebut.
+     * Kalau periodenya belum ada, buat baru dengan status aktif.
+     */
+    public function resolvePeriode($idPerusahaan, $tanggal)
     {
         $tahun = (int) date('Y', strtotime($tanggal));
         $bulan = (int) date('n', strtotime($tanggal));
@@ -139,10 +152,13 @@ class JournalService
         );
     }
 
-    protected function generateNoBukti(PeriodeAkuntansi $periode): string
+    /**
+     * Buat nomor bukti berurutan per periode, contoh: JRN-26060-001.
+     */
+    protected function generateNoBukti(PeriodeAkuntansi $periode)
     {
-        $seq = JurnalAkuntansi::where('id_periode', $periode->id_periode)->count() + 1;
+        $urutanKe = JurnalAkuntansi::where('id_periode', $periode->id_periode)->count() + 1;
 
-        return sprintf('JRN-%02d%02d0-%03d', $periode->tahun % 100, $periode->bulan, $seq);
+        return sprintf('JRN-%02d%02d0-%03d', $periode->tahun % 100, $periode->bulan, $urutanKe);
     }
 }

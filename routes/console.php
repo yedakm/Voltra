@@ -3,9 +3,9 @@
 use Illuminate\Support\Facades\Schedule;
 
 /*
-| Voltra — penjadwalan otomatis (Laravel Scheduler).
+| Penjadwalan otomatis (Laravel Scheduler).
 | Depresiasi Garis Lurus dijalankan tiap tanggal 1 pukul 00:30
-| untuk membukukan penyusutan bulan sebelumnya (alur 5 PRD).
+| untuk membukukan penyusutan bulan sebelumnya.
 | Aktifkan dengan menjalankan: php artisan schedule:work
 */
 

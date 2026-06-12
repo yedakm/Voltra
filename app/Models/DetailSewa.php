@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * detail_sewa — composite primary key (id_sewa, id_genset).
+ * detail_sewa - composite primary key (id_sewa, id_genset).
  */
 class DetailSewa extends Model
 {

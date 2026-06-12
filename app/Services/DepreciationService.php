@@ -8,27 +8,22 @@ use App\Models\PeriodeAkuntansi;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Otomatisasi depresiasi metode Garis Lurus / Straight Line (Bab 2.5 TA).
- *
- *   D = (C − R) / N
- *   D = beban penyusutan, C = harga perolehan, R = nilai residu, N = umur ekonomis (bulan)
- *
- * Dijalankan tiap akhir bulan oleh Laravel Scheduler (alur 5 PRD).
+ * Service penghitung depresiasi metode Garis Lurus (Straight Line).
+ * Rumus: beban per bulan = (harga perolehan - nilai residu) / umur ekonomis dalam bulan.
+ * Dijalankan otomatis tiap akhir bulan oleh Laravel Scheduler.
  */
 class DepreciationService
 {
     public function __construct(protected JournalService $journal) {}
 
     /**
-     * Hitung & posting penyusutan satu periode untuk seluruh genset aktif.
-     *
-     * @return array{unit:int,total_beban:float,id_jurnal:?int,skipped:bool}
+     * Hitung dan catat penyusutan satu periode untuk seluruh genset aktif.
      */
     public function runForPeriod(int $idPerusahaan, int $tahun, int $bulan): array
     {
         $periodeBulan = sprintf('%04d-%02d-01', $tahun, $bulan);
 
-        // Idempotent — jangan dobel kalau periode ini sudah dihitung.
+        // Kalau periode ini sudah pernah dihitung, lewati supaya tidak dobel.
         $sudahAda = JadwalPenyusutan::where('id_perusahaan', $idPerusahaan)
             ->where('periode_bulan', $periodeBulan)->exists();
         if ($sudahAda) {
@@ -50,7 +45,7 @@ class DepreciationService
                 $beban = round(((float) $g->harga_perolehan - (float) $g->nilai_residu_aktual) / $umur);
                 $depreciable = (float) $g->harga_perolehan - (float) $g->nilai_residu_aktual;
 
-                // akumulasi = penyusutan periode sebelumnya + periode ini
+                // Akumulasi = total penyusutan periode-periode sebelumnya + periode ini.
                 $akumSebelum = (float) JadwalPenyusutan::where('id_genset', $g->id_genset)
                     ->where('periode_bulan', '<', $periodeBulan)->sum('beban_penyusutan');
                 $akumulasi = min($akumSebelum + $beban, $depreciable);
@@ -79,17 +74,17 @@ class DepreciationService
             return ['unit' => $gensets->count(), 'total_beban' => 0.0, 'id_jurnal' => null, 'skipped' => false];
         }
 
-        // Jurnal penyusutan: D Beban Penyusutan / K Akumulasi Penyusutan
+        // Catat jurnalnya: debit Beban Penyusutan, kredit Akumulasi Penyusutan.
         $jurnal = $this->journal->post(
-            idPerusahaan: $idPerusahaan,
-            jenisJurnal: 'penyusutan',
-            tanggal: date('Y-m-t', strtotime($periodeBulan)),
-            lines: [
+            $idPerusahaan,
+            'penyusutan',
+            date('Y-m-t', strtotime($periodeBulan)),
+            [
                 ['kode_akun' => '5-1001', 'debit' => $totalBeban, 'keterangan' => 'Beban penyusutan ' . $periodeBulan],
                 ['kode_akun' => '1-2002', 'kredit' => $totalBeban, 'keterangan' => 'Akumulasi penyusutan'],
             ],
-            keterangan: "Depresiasi bulanan $periodeBulan ({$gensets->count()} unit)",
-            referensiTipe: 'scheduler',
+            "Depresiasi bulanan $periodeBulan ({$gensets->count()} unit)",
+            'scheduler',
         );
 
         foreach ($pending as $row) {

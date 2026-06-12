@@ -17,7 +17,7 @@
         }
         $info = VoltraData::depresiasiInfo($g);
         $eligible[$g['id_genset']] = [
-            'label' => $g['nomor_seri'] . ' · ' . $merekById[$g['id_merek']]['nama_merek'] . ' ' . $kategoriById[$g['id_kategori']]['kapasitas'],
+            'label' => $g['nomor_seri'] . ' · ' . ($merekById[$g['id_merek']]['nama_merek'] ?? '—') . ' ' . ($kategoriById[$g['id_kategori']]['kapasitas'] ?? '—'),
             'harga' => $g['harga_perolehan'],
             'accumulated' => $info['accumulated'],
             'book' => $info['bookValue'],

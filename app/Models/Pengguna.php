@@ -3,16 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Laravel\Sanctum\HasApiTokens;
 
 /**
- * Pengguna — model autentikasi Voltra (menggantikan model User bawaan).
+ * Model pengguna untuk autentikasi aplikasi.
  * Pasangan email + id_perusahaan bersifat unik (multi-tenant).
  */
 class Pengguna extends Authenticatable
 {
-    use HasApiTokens;
-
     protected $connection = 'voltra';
     protected $table = 'pengguna';
     protected $primaryKey = 'id_pengguna';
